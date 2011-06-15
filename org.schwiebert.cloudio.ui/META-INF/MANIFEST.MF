@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Cloudio UI
+Bundle-SymbolicName: org.schwiebert.cloudio.ui;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: org.schwiebert.cloudio.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.schwiebert.cloudio,
+ org.schwiebert.cloudio.layout,
+ org.schwiebert.cloudio.util

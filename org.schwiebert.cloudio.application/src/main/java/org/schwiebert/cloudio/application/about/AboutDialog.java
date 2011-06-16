@@ -61,7 +61,7 @@ public class AboutDialog extends Dialog {
 		data.heightHint=330;
 		data.widthHint=400;
 		tc.setLayoutData(data);
-		tc.setMaxFontHeight(50);
+		tc.setMaxFontSize(50);
 		tc.setMinFontSize(15);
 		tc.setLayouter(new DefaultLayouter(5, 0));
 		List<Word> values = new ArrayList<Word>();

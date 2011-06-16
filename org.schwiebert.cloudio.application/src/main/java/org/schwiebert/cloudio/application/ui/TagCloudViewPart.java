@@ -112,7 +112,7 @@ public class TagCloudViewPart extends ViewPart {
 			types.add(new Type("Tag Cloud", size));
 			size--;
 		}
-		viewer.getCloud().setMaxFontHeight(100);
+		viewer.getCloud().setMaxFontSize(100);
 		viewer.getCloud().setMinFontSize(15);
 		labelProvider.setColors(options.getColors());
 		labelProvider.setFonts(options.getFonts());

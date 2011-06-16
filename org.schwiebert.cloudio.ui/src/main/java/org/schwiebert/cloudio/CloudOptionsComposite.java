@@ -306,9 +306,9 @@ public class CloudOptionsComposite extends Composite {
 				ColorDialog cd = new ColorDialog(parent.getShell());
 				RGB color = cd.open();
 				if(color == null) return;
-				Color old = viewer.getCloud().getHighlightColor();
+				Color old = viewer.getCloud().getSelectionColor();
 				Color c = new Color(Display.getDefault(), color);
-				viewer.getCloud().setHighlightColor(c);
+				viewer.getCloud().setSelectionColor(c);
 				old.dispose();
 			}
 			
@@ -354,7 +354,7 @@ public class CloudOptionsComposite extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				String item = font.getItem(font.getSelectionIndex());
-				viewer.getCloud().setMaxFontHeight(Integer.parseInt(item));
+				viewer.getCloud().setMaxFontSize(Integer.parseInt(item));
 			}
 			
 			@Override

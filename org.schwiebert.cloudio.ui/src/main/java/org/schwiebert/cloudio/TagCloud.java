@@ -9,8 +9,6 @@
  *     Department of Computational Linguistics, University of Cologne, Germany - initial API and implementation
  ******************************************************************************/
 package org.schwiebert.cloudio;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -130,7 +128,8 @@ public class TagCloud extends Canvas {
 	/**
 	 * Set of event listeners
 	 */
-	private final Set<EventListener> myListeners = new HashSet<EventListener>();
+	//private final Set<EventListener> myListeners = new HashSet<EventListener>();
+	
 	
 	private boolean initialized = false;
 	
@@ -195,6 +194,14 @@ public class TagCloud extends Canvas {
 	private Listener mouseDownListener;
 
 	private Listener vBarListener;
+
+	private Set<EventListener> mouseWheelListeners = new HashSet<EventListener>();
+
+	private Set<EventListener> mouseTrackListeners = new HashSet<EventListener>();
+
+	private Set<EventListener> mouseMoveListeners = new HashSet<EventListener>();
+
+	private Set<EventListener> mouseListeners = new HashSet<EventListener>();
 	
 	/**
 	 * Creates a new Tag cloud on the given parent. To add scroll bars
@@ -208,6 +215,9 @@ public class TagCloud extends Canvas {
 		gc = new GC(this);
 		setBackground(new Color(getDisplay(), Display.getDefault().getSystemColor(SWT.COLOR_BLACK).getRGB()));
 		initListeners();
+		textLayerImage = new Image(getDisplay(), 100,100);
+		selectionLayerImage = new Image(getDisplay(), 100,100);
+		zoomFit();
 	}
 
 	/**
@@ -254,6 +264,10 @@ public class TagCloud extends Canvas {
 		currentZoom = 1;
 		updateScrollbars();
 		redraw();
+	}
+	
+	public double getZoom() {
+		return currentZoom;
 	}
 	
 	/**
@@ -644,11 +658,12 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param maxWords 
 	 */
 	public void setWords(List<Word> values, IProgressMonitor monitor) {
+		Assert.isLegal(values != null, "List must not be null!");
 		for (Word word : values) {
-			Assert.isNotNull(word, "Word cannot be null!");
-			Assert.isNotNull(word.string, "Word must define a string!");
-			Assert.isNotNull(word.color, "A word must define a color");
-			Assert.isNotNull(word.fontData, "A word must define a fontdata array");
+			Assert.isLegal(word != null, "Word must not be null!");
+			Assert.isLegal(word.string != null, "Word must define a string!");
+			Assert.isLegal(word.color != null, "A word must define a color");
+			Assert.isLegal(word.fontData != null, "A word must define a fontdata array");
 			Assert.isLegal(word.weight >= 0, "Word weight must be between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.weight <= 1, "Word weight must be between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.angle >= -90, "Angle must be between -90 and +90 (inclusive), but was " + word.angle);
@@ -677,7 +692,7 @@ found:			for(int a = x; a < xMax; a++) {
 		calcExtents(monitor);		
 	}
 
-	public void initializeMainTree() {
+	private void initializeMainTree() {
 		for(int i = 0; i < cloudMatrix.length; i++) {
 			for(int j = 0; j < cloudMatrix[i].length; j++) {
 				cloudMatrix[i][j] = -1;
@@ -768,15 +783,15 @@ found:			for(int a = x; a < xMax; a++) {
 				MouseEvent me = createMouseEvent(event, word);
 				if(currentWord != null) {
 					if(word == currentWord) {
-						fireMouseEvent(me, SWT.MouseHover);
+						fireMouseEvent(me, SWT.MouseHover, mouseMoveListeners);
 					} else {
 						currentWord = null;
-						fireMouseEvent(me, SWT.MouseExit);
+						fireMouseEvent(me, SWT.MouseExit, mouseMoveListeners);
 					}
 				}
 				if(currentWord == null && word != null) {
 					currentWord = word;
-					fireMouseEvent(me, SWT.MouseEnter);
+					fireMouseEvent(me, SWT.MouseEnter, mouseMoveListeners);
 				}
 			}
 		};
@@ -786,7 +801,7 @@ found:			for(int a = x; a < xMax; a++) {
 			public void handleEvent(Event event) {
 				Word word = getWordAt(new Point(event.x, event.y));
 				MouseEvent me = createMouseEvent(event, word);
-				fireMouseEvent(me, SWT.MouseUp);
+				fireMouseEvent(me, SWT.MouseUp, mouseListeners);
 				
 			}
 		};
@@ -796,7 +811,7 @@ found:			for(int a = x; a < xMax; a++) {
 			public void handleEvent(Event event) {
 				Word word = getWordAt(new Point(event.x, event.y));
 				MouseEvent me = createMouseEvent(event, word);
-				fireMouseEvent(me, SWT.MouseDoubleClick);
+				fireMouseEvent(me, SWT.MouseDoubleClick, mouseListeners);
 			}
 	
 		};
@@ -806,7 +821,7 @@ found:			for(int a = x; a < xMax; a++) {
 			public void handleEvent(Event event) {
 				Word word = getWordAt(new Point(event.x, event.y));
 				MouseEvent me = createMouseEvent(event, word);
-				fireMouseEvent(me, SWT.MouseDown);
+				fireMouseEvent(me, SWT.MouseDown, mouseListeners);
 			}
 			
 		};
@@ -856,42 +871,42 @@ found:			for(int a = x; a < xMax; a++) {
 	
 	@Override
 	public void addMouseListener(MouseListener listener) {
-		myListeners.add(listener);
+		mouseListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseMoveListener(MouseMoveListener listener) {
-		myListeners.add(listener);
+		mouseMoveListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseTrackListener(MouseTrackListener listener) {
-		myListeners.add(listener);
+		mouseTrackListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseWheelListener(MouseWheelListener listener) {
-		myListeners.add(listener);
+		mouseWheelListeners.add(listener);
 	}
 	
 	@Override
 	public void removeMouseListener(MouseListener listener) {
-		myListeners.remove(listener);
+		mouseListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseMoveListener(MouseMoveListener listener) {
-		myListeners.remove(listener);
+		mouseMoveListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseTrackListener(MouseTrackListener listener) {
-		myListeners.remove(listener);
+		mouseTrackListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseWheelListener(MouseWheelListener listener) {
-		myListeners.remove(listener);
+		mouseWheelListeners.remove(listener);
 	}
 	
 	private MouseEvent createMouseEvent(Event event, Word word) {
@@ -904,8 +919,8 @@ found:			for(int a = x; a < xMax; a++) {
 		return me;
 	}
 	
-	private void fireMouseEvent(MouseEvent me, int type) {
-		for (EventListener listener : myListeners) {
+	private void fireMouseEvent(MouseEvent me, int type, Set<EventListener> listeners) {
+		for (EventListener listener : listeners) {
 			if(listener instanceof MouseListener) {
 				MouseListener ml = (MouseListener) listener;
 				switch(type) {
@@ -931,7 +946,7 @@ found:			for(int a = x; a < xMax; a++) {
 			if(listener instanceof MouseWheelListener) {
 				MouseWheelListener ml = (MouseWheelListener) listener;
 				switch(type) {
-				case SWT.MouseWheel: ml.mouseScrolled(me); break;
+					case SWT.MouseWheel: ml.mouseScrolled(me); break;
 				}
 			}
 		}
@@ -974,9 +989,15 @@ found:			for(int a = x; a < xMax; a++) {
 	 * is red.
 	 * @param color
 	 */
-	public void setHighlightColor(Color color) {
-		Assert.isNotNull(color, "Color must not be null!");
+	public void setSelectionColor(Color color) {
+		Assert.isLegal(color != null, "Color must not be null!");
 		this.highlightColor = color;
+	}
+	
+	@Override
+	public void setBackground(Color color) {
+		Assert.isLegal(color != null, "Color must not be null!");
+		super.setBackground(color);
 	}
 	
 	/**
@@ -1041,7 +1062,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * value is 500.
 	 * @param maxSize
 	 */
-	public void setMaxFontHeight(int maxSize) {
+	public void setMaxFontSize(int maxSize) {
 		Assert.isLegal(maxSize > 0, "Font Size must be greater than zero, but was " + maxSize + "!");
 		maxFontSize = maxSize;
 	}
@@ -1099,108 +1120,118 @@ found:			for(int a = x; a < xMax; a++) {
 		}
 	}
 	
-	/**
-	 * Work in progress - still broken positioning
-	 * @param w
-	 * @throws IOException
-	 */
-	public void toSVG(Writer w) throws IOException {
-		int counter = 1;
-		w.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
-				"<!-- Created with Eclipse Tag Cloud -->\n" +
-				"<svg\n" +
-				"xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n" +
-				"xmlns:cc=\"http://creativecommons.org/ns#\"\n" +
-				"xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n" +
-				"xmlns:svg=\"http://www.w3.org/2000/svg\"\n" +
-				"xmlns=\"http://www.w3.org/2000/svg\"\n" +
-				"version=\"1.1\"\n" +
-				"width=\"" + textLayerImage.getBounds().width + "\"\n" +
-				"height=\"" + textLayerImage.getBounds().height + "\"\n" +
-				"id=\"svg2\">\n" +
-				"<defs\n" +
-				"id=\"defs4\" />\n" +
-				"<metadata\n" +
-				"id=\"metadata7\">\n" +
-				"<rdf:RDF>\n" +
-				"<cc:Work\n" +
-				"rdf:about=\"\">\n" +
-				"<dc:format>image/svg+xml</dc:format>\n" +
-				"<dc:type\n" +
-				"rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n" +
-				"<dc:title></dc:title>\n" +
-				"</cc:Work>\n" +
-				"</rdf:RDF>\n" +
-				"</metadata>\n" +
-				"<g\n" +
-				"id=\"layer1\">\n");
-		GC tmp = new GC(Display.getDefault());
-		String bg = Integer.toHexString(getBackground().getRed()) + Integer.toHexString(getBackground().getGreen()) + Integer.toHexString(getBackground().getBlue());
-		w.append("<rect x=\"" + 0 + "\" y=\"" + 0 + "\" width=\"" + textLayerImage.getBounds().width + "\" height=\"" + textLayerImage.getBounds().height + "\" style=\"fill:" + bg + ";stroke:#006600;\"/>");
-		for (Word word : wordsToUse) {
-			String id = "text" + counter++;
-			FontData fd = word.fontData[0];
-			String style = "font-size:" + fd.getHeight()+"px;" +
-					"font-family:" + fd.getName() + ";";
-			String text = word.string;
-			int x = 0;
-			int y = 0;
-			double radian = Math.toRadians(word.angle);
-			final double sin = Math.abs(Math.sin(radian));
-			final double cos = Math.abs(Math.cos(radian));
-			float fontSize = getFontSize(word);
-			Font font = new Font(tmp.getDevice(), word.fontData);
-			Path p = new Path(tmp.getDevice());
-			p.addString(word.string, 0, 0, font);
-			float[] bounds = new float[4];
-			p.getBounds(bounds);
-			p.dispose();
-			gc.setFont(font);
-			//Point stringExtent = gc.stringExtent(word.string);
-			font.dispose();
-			if(word.angle < 0) {
-				y = word.height - (int) ( cos * fontSize);
-			} else {
-				x = (int) (sin * fontSize);
-			}
-			x += word.x - regionOffset.x;
-			y += word.y - regionOffset.y;
-			
-//			w.append("<rect x=\"" + 0 + "\" y=\"" + 0 + "\" width=\"" + stringExtent.x + "\" height=\"" + stringExtent.y + "\" style=\"fill:none;stroke:#006600;\"" +
-//					" transform=\"translate(" + x + "," + y + ") rotate(" + word.angle + ")\"/>");
-			
-			int xOff = (int) (-bounds[0] + bounds[2]/2);
-			int yOff = (int)(bounds[3] - bounds[1]);
-			String color = Integer.toHexString(word.color.getRed()) + Integer.toHexString(word.color.getGreen()) + Integer.toHexString(word.color.getBlue()); 
-			String fullString = "\n<text "
-				+ "x=\"" + xOff + "\"\n"
-				+ "y=\"" + yOff + "\"\n"
-				+ "text-anchor=\"middle\"\n"
-				+ "transform = \"translate(" + x + "," + y + ") rotate(" + word.angle+")\"\n"
-				+ "id=\"" + id + "\"\n"
-				+ "xml:space=\"preserve\"\n"
-				+ "style=\"font-size:40px;fill:#" + color + ";fill-opacity:1;stroke:none;font-family:Sans\">\n"
-				+ "<tspan "
-				+ "style=\""+style+"\">"
-				+ text + "</tspan>\n"
-				+"</text>\n";
-			
-			w.append(fullString);
-		}
-		tmp.dispose();
-		w.append("</g>\n</svg>\n");
-	}
+//	/**
+//	 * Work in progress - still broken positioning
+//	 * @param w
+//	 * @throws IOException
+//	 */
+//	public void toSVG(Writer w) throws IOException {
+//		int counter = 1;
+//		w.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+//				"<!-- Created with Eclipse Tag Cloud -->\n" +
+//				"<svg\n" +
+//				"xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n" +
+//				"xmlns:cc=\"http://creativecommons.org/ns#\"\n" +
+//				"xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n" +
+//				"xmlns:svg=\"http://www.w3.org/2000/svg\"\n" +
+//				"xmlns=\"http://www.w3.org/2000/svg\"\n" +
+//				"version=\"1.1\"\n" +
+//				"width=\"" + textLayerImage.getBounds().width + "\"\n" +
+//				"height=\"" + textLayerImage.getBounds().height + "\"\n" +
+//				"id=\"svg2\">\n" +
+//				"<defs\n" +
+//				"id=\"defs4\" />\n" +
+//				"<metadata\n" +
+//				"id=\"metadata7\">\n" +
+//				"<rdf:RDF>\n" +
+//				"<cc:Work\n" +
+//				"rdf:about=\"\">\n" +
+//				"<dc:format>image/svg+xml</dc:format>\n" +
+//				"<dc:type\n" +
+//				"rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\" />\n" +
+//				"<dc:title></dc:title>\n" +
+//				"</cc:Work>\n" +
+//				"</rdf:RDF>\n" +
+//				"</metadata>\n" +
+//				"<g\n" +
+//				"id=\"layer1\">\n");
+//		GC tmp = new GC(Display.getDefault());
+//		String bg = Integer.toHexString(getBackground().getRed()) + Integer.toHexString(getBackground().getGreen()) + Integer.toHexString(getBackground().getBlue());
+//		w.append("<rect x=\"" + 0 + "\" y=\"" + 0 + "\" width=\"" + textLayerImage.getBounds().width + "\" height=\"" + textLayerImage.getBounds().height + "\" style=\"fill:" + bg + ";stroke:#006600;\"/>");
+//		for (Word word : wordsToUse) {
+//			String id = "text" + counter++;
+//			FontData fd = word.fontData[0];
+//			String style = "font-size:" + fd.getHeight()+"px;" +
+//					"font-family:" + fd.getName() + ";";
+//			String text = word.string;
+//			int x = 0;
+//			int y = 0;
+//			double radian = Math.toRadians(word.angle);
+//			final double sin = Math.abs(Math.sin(radian));
+//			final double cos = Math.abs(Math.cos(radian));
+//			float fontSize = getFontSize(word);
+//			Font font = new Font(tmp.getDevice(), word.fontData);
+//			Path p = new Path(tmp.getDevice());
+//			p.addString(word.string, 0, 0, font);
+//			float[] bounds = new float[4];
+//			p.getBounds(bounds);
+//			p.dispose();
+//			gc.setFont(font);
+//			//Point stringExtent = gc.stringExtent(word.string);
+//			font.dispose();
+//			if(word.angle < 0) {
+//				y = word.height - (int) ( cos * fontSize);
+//			} else {
+//				x = (int) (sin * fontSize);
+//			}
+//			x += word.x - regionOffset.x;
+//			y += word.y - regionOffset.y;
+//			
+////			w.append("<rect x=\"" + 0 + "\" y=\"" + 0 + "\" width=\"" + stringExtent.x + "\" height=\"" + stringExtent.y + "\" style=\"fill:none;stroke:#006600;\"" +
+////					" transform=\"translate(" + x + "," + y + ") rotate(" + word.angle + ")\"/>");
+//			
+//			int xOff = (int) (-bounds[0] + bounds[2]/2);
+//			int yOff = (int)(bounds[3] - bounds[1]);
+//			String color = Integer.toHexString(word.color.getRed()) + Integer.toHexString(word.color.getGreen()) + Integer.toHexString(word.color.getBlue()); 
+//			String fullString = "\n<text "
+//				+ "x=\"" + xOff + "\"\n"
+//				+ "y=\"" + yOff + "\"\n"
+//				+ "text-anchor=\"middle\"\n"
+//				+ "transform = \"translate(" + x + "," + y + ") rotate(" + word.angle+")\"\n"
+//				+ "id=\"" + id + "\"\n"
+//				+ "xml:space=\"preserve\"\n"
+//				+ "style=\"font-size:40px;fill:#" + color + ";fill-opacity:1;stroke:none;font-family:Sans\">\n"
+//				+ "<tspan "
+//				+ "style=\""+style+"\">"
+//				+ text + "</tspan>\n"
+//				+"</text>\n";
+//			
+//			w.append(fullString);
+//		}
+//		tmp.dispose();
+//		w.append("</g>\n</svg>\n");
+//	}
 
 	public void setBoostFactor(float boostFactor) {
+		Assert.isLegal(boostFactor > 0);
 		this.boostFactor = boostFactor;
 	}
 
-	public Color getHighlightColor() {
+	public Color getSelectionColor() {
 		return highlightColor;
 	}
 
 	public void setLayouter(ILayouter layouter) {
+		Assert.isLegal(layouter != null, "Layouter must not be null!");
 		this.layouter = layouter;
+	}
+
+	public int getMaxFontSize() {
+		return maxFontSize;
+	}
+
+	public int getMinFontSize() {
+		return minFontSize;
 	}
 
 }

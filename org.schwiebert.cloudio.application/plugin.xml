@@ -10,16 +10,6 @@
             restorable="true">
       </view>
    </extension>
-   <extension
-         point="org.eclipse.ui.preferencePages">
-      <page
-            class="org.schwiebert.cloudio.preferences.TagCloudPreferencesPage"
-            id="org.schwiebert.cloudio.sample.tagcloudprefs"
-            name="Tag Cloud">
-      </page>
-      </extension>
-      
-      
       <extension
          point="org.eclipse.ui.actionSets">
       <actionSet

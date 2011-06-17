@@ -54,7 +54,6 @@ public class TagCloudViewer extends ContentViewer {
 
 	public TagCloudViewer(TagCloud cloud) {
 		this.cloud = cloud;
-		updateFromPreferences();
 		initListeners();
 	}
 	
@@ -142,16 +141,6 @@ public class TagCloudViewer extends ContentViewer {
 		cloud.setFocus();
 	}
 
-	public void updateFromPreferences() {
-//		IPreferenceStore preferenceStore = Activator.getDefault().getPreferenceStore();
-//		Font font = new Font(Display.getDefault(), PreferenceConverter.getFontData(preferenceStore, PreferenceConstants.FONT));
-//		RGB highlightColor = PreferenceConverter.getColor(preferenceStore, PreferenceConstants.HIGHLIGHT_COLOR);
-//		int maxSize = preferenceStore.getInt(PreferenceConstants.MAX_SIZE);
-//		cloud.setHighlightColor(new Color(Display.getDefault(), highlightColor));
-//		cloud.setFont(font);
-//		cloud.setMaxFontHeight(maxSize);
-	}
-	
 	/**
 	 * Resets the {@link TagCloud}. If <code>recalc</code> is
 	 * <code>true</code>, the displayed elements will be updated
@@ -162,7 +151,6 @@ public class TagCloudViewer extends ContentViewer {
 	 * @param recalc
 	 */
 	public void reset(IProgressMonitor monitor, boolean recalc) {
-		cloud.resetLayout();
 		cloud.layoutCloud(monitor, recalc);
 	}
 

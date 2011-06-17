@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.schwiebert.cloudio;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -47,6 +49,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
+import org.schwiebert.cloudio.layout.DefaultLayouter;
 import org.schwiebert.cloudio.layout.ILayouter;
 import org.schwiebert.cloudio.util.RectTree;
 import org.schwiebert.cloudio.util.SmallRect;
@@ -213,10 +216,10 @@ public class TagCloud extends Canvas {
 		super(parent, style);
 		highlightColor = new Color(getDisplay(), Display.getDefault().getSystemColor(SWT.COLOR_RED).getRGB());
 		gc = new GC(this);
+		layouter = new DefaultLayouter(5, 5);
 		setBackground(new Color(getDisplay(), Display.getDefault().getSystemColor(SWT.COLOR_BLACK).getRGB()));
 		initListeners();
 		textLayerImage = new Image(getDisplay(), 100,100);
-		selectionLayerImage = new Image(getDisplay(), 100,100);
 		zoomFit();
 	}
 
@@ -228,8 +231,12 @@ public class TagCloud extends Canvas {
 	public void dispose() {
 		removeListeners();
 		textLayerImage.dispose();
-		selectionLayerImage.dispose();
-		zoomLayerImage.dispose();
+		if(selectionLayerImage != null) {
+			selectionLayerImage.dispose();
+		}
+		if(zoomLayerImage != null) {
+			zoomLayerImage.dispose();
+		}
 		if(!this.isDisposed()) { // Should dispose gc, but can't...
 			gc.dispose();
 		}
@@ -257,6 +264,7 @@ public class TagCloud extends Canvas {
 	 * Resets the zoom to 100 % (original size)
 	 */
 	public void zoomReset() {
+		if(selectionLayerImage == null) return;
 		zoomLayerImage = new Image(getDisplay(), selectionLayerImage.getBounds().width, selectionLayerImage.getBounds().height);
 		GC gc = new GC(zoomLayerImage);
 		gc.drawImage(selectionLayerImage, 0, 0);
@@ -286,9 +294,13 @@ public class TagCloud extends Canvas {
 	}
 
 	private void zoom(double s) {
+		if(selectionLayerImage == null) return;
 		if(s < 0.1) s = 0.1;
 		if(s > 10) s = 10;
-		zoomLayerImage = new Image(getDisplay(), (int)(selectionLayerImage.getBounds().width*s), (int)(selectionLayerImage.getBounds().height*s));
+		int width = (int) (selectionLayerImage.getBounds().width*s);
+		int height = (int) (selectionLayerImage.getBounds().height*s);
+		if(width == 0 || height == 0) return;
+		zoomLayerImage = new Image(getDisplay(), width, height);
 		Transform tf = new Transform(getDisplay());
 		tf.scale((float)s, (float)s);
 		GC gc = new GC(zoomLayerImage);
@@ -384,10 +396,11 @@ public class TagCloud extends Canvas {
 		if(monitor != null) {
 			monitor.subTask("Calculating word boundaries...");
 		}
+		if(wordsToUse == null) return;
 		double step = 80D/wordsToUse.size();
 		double current = 0;
 		int next = 10;
-		long start = System.currentTimeMillis();
+		executors = Executors.newFixedThreadPool(getNumberOfThreads());
 		for (final Word word : wordsToUse) {
 			FontData[] fontData = word.fontData;
 			int fontSize = (int) getFontSize(word);
@@ -423,16 +436,11 @@ public class TagCloud extends Canvas {
 			}
 		}
 		executors.shutdown();
-		while(!executors.isTerminated()) {
-			try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try {
+			executors.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
-		long end = System.currentTimeMillis();
-		System.out.println("Extends Time: " + (end - start));
 		Collections.sort(wordsToUse, new Comparator<Word>() {
 
 			@Override
@@ -467,7 +475,6 @@ public class TagCloud extends Canvas {
 		// Why is drawString sooo slow? between 30 and 90 percent of the whole
 		// draw time...
 		g.drawString(word.string, 0, 0, false);
-		
 		int max = Math.max(x,y);
 		int tmp = TREE_SIZE;
 		while(max < tmp) {
@@ -507,7 +514,7 @@ found:			for(int a = x; a < xMax; a++) {
 					for(int b = y; b < yMax; b++) {
 						if(matrix[b][a]) {
 							SmallRect r = new SmallRect(i, j, RESOLUTION, RESOLUTION);
-							insertIntoTree(word, word.tree, r);
+							word.tree.insert(r, word.id);
 							break found;
 						}
 					}
@@ -515,13 +522,6 @@ found:			for(int a = x; a < xMax; a++) {
 			}
 		}
 		word.tree.releaseRects();
-	}
-
-	/**
-	 * For profiling only...
-	 */
-	private void insertIntoTree(Word word, RectTree tree, SmallRect r) {
-		tree.insert(r,word.id);
 	}
 
 	/**
@@ -549,7 +549,6 @@ found:			for(int a = x; a < xMax; a++) {
 		executors = Executors.newFixedThreadPool(1);
 		if(wordsToUse != null) {
 			double step = 100D / wordsToUse.size();
-			long start = System.currentTimeMillis();
 			long lTime = 0;
 			final GC g = gc;
 			for (Word word : wordsToUse) {
@@ -563,7 +562,7 @@ found:			for(int a = x; a < xMax; a++) {
 				}
 				region.add(word.x, word.y, word.width, word.height);
 				final Word wrd = word;
-				executors.submit(new Runnable() {
+				executors.execute(new Runnable() {
 					
 					@Override
 					public void run() {
@@ -603,25 +602,19 @@ found:			for(int a = x; a < xMax; a++) {
 				
 			}
 			executors.shutdown();
-			while(!executors.isTerminated()) {
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}				
+			try {
+				executors.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-			//mainTree.release();
-			long end = System.currentTimeMillis();
-			System.out.println("Place time " + (end - start));
 		}
-		long start = System.currentTimeMillis();
 		Rectangle r = region.getBounds();
 		gc.dispose();
 		if(textLayerImage != null) {
 			textLayerImage.dispose();
 		}
-//		r.width += 5;
-//		r.height += 5;
+		r.width += 5;
+		r.height += 5;
 		textLayerImage = new Image(getDisplay(), r.width, r.height);
 		gc = new GC(textLayerImage);
 		gc.drawImage(tmpImage, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
@@ -637,15 +630,6 @@ found:			for(int a = x; a < xMax; a++) {
 		if(monitor != null) {
 			monitor.worked(10);
 		}
-		long end = System.currentTimeMillis();
-		System.out.println("Rest: " + (end - start));
-	}
-
-	/**
-	 * Resets the main {@link RectTree}.
-	 */
-	public void resetLayout() {
-		initializeMainTree();
 	}
 	
 	/**
@@ -671,7 +655,6 @@ found:			for(int a = x; a < xMax; a++) {
 		}
 		this.wordsToUse = new ArrayList<Word>(values);
 		if(boost > 0) {
-			System.out.println("BF " + boostFactor);
 			double factor = boostFactor;
 			int i = boost;
 			for (Word word : values) {
@@ -684,15 +667,14 @@ found:			for(int a = x; a < xMax; a++) {
 				if(i == 0) break;
 			}
 		}
-		executors = Executors.newFixedThreadPool(getNumberOfThreads());
-		if(cloudMatrix == null) {
-			cloudMatrix = new short[TREE_SIZE/RESOLUTION][TREE_SIZE/RESOLUTION];
-		}
-		initializeMainTree();
-		calcExtents(monitor);		
+		layoutCloud(monitor, true);
 	}
 
-	private void initializeMainTree() {
+	/**
+	 * Reset the initial matrix
+	 */
+	private void resetLayout() {
+		if(cloudMatrix == null) cloudMatrix = new short[TREE_SIZE][TREE_SIZE];
 		for(int i = 0; i < cloudMatrix.length; i++) {
 			for(int j = 0; j < cloudMatrix[i].length; j++) {
 				cloudMatrix[i][j] = -1;
@@ -741,11 +723,8 @@ found:			for(int a = x; a < xMax; a++) {
 		resizeListener = new Listener () {
 			@Override
 			public void handleEvent (Event e) {
-				if(zoomLayerImage == null) {
-					layoutCloud(null, false);
-				} 
 				updateScrollbars();
-				TagCloud.this.redraw ();
+				TagCloud.this.redraw();
 			}
 		};
 		this.addListener (SWT.Resize,  resizeListener);
@@ -765,12 +744,7 @@ found:			for(int a = x; a < xMax; a++) {
 				if (marginHeight > 0) {
 					gc.fillRectangle (0, rect.height, client.width, marginHeight);
 				}
-				try {
-					gc.drawImage (zoomLayerImage, origin.x, origin.y);
-				} catch (Exception e1) {
-					e1.printStackTrace();
-					System.out.println("FAILED TO DRAW " + zoomLayerImage.getBounds() + " -- " + origin);
-				}
+				gc.drawImage (zoomLayerImage, origin.x, origin.y);
 			}
 
 		};
@@ -826,6 +800,7 @@ found:			for(int a = x; a < xMax; a++) {
 			
 		};
 		this.addListener(SWT.MouseDown, mouseDownListener);
+		
 
 	}
 	
@@ -871,21 +846,25 @@ found:			for(int a = x; a < xMax; a++) {
 	
 	@Override
 	public void addMouseListener(MouseListener listener) {
+		Assert.isLegal(listener != null);
 		mouseListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseMoveListener(MouseMoveListener listener) {
+		Assert.isLegal(listener != null);
 		mouseMoveListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseTrackListener(MouseTrackListener listener) {
+		Assert.isLegal(listener != null);
 		mouseTrackListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseWheelListener(MouseWheelListener listener) {
+		Assert.isLegal(listener != null);
 		mouseWheelListeners.add(listener);
 	}
 	
@@ -918,7 +897,7 @@ found:			for(int a = x; a < xMax; a++) {
 		me.display = Display.getCurrent();
 		return me;
 	}
-	
+		
 	private void fireMouseEvent(MouseEvent me, int type, Set<EventListener> listeners) {
 		for (EventListener listener : listeners) {
 			if(listener instanceof MouseListener) {
@@ -958,7 +937,9 @@ found:			for(int a = x; a < xMax; a++) {
 	 */
 	public void setSelection(Set<Word> words) {
 		Assert.isNotNull(words, "Selection must not be null!");
+		if(wordsToUse == null) return; 
 		this.selection = new HashSet<Word>(words);
+		this.selection.retainAll(wordsToUse);
 		int w = textLayerImage.getBounds().width;
 		int h = textLayerImage.getBounds().height;
 		if(selectionLayerImage != null) {
@@ -967,7 +948,7 @@ found:			for(int a = x; a < xMax; a++) {
 		selectionLayerImage = new Image(getDisplay(), w, h);
 		GC gc = new GC(selectionLayerImage);
 		gc.drawImage(textLayerImage, 0, 0);
-		for (Word word : words) {
+		for (Word word : selection) {
 			drawWord(gc, word, highlightColor);			
 		}
 		gc.dispose();
@@ -1005,6 +986,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param monitor 
 	 */
 	public void layoutCloud(IProgressMonitor monitor, boolean recalc) {
+		resetLayout();
 		if(selectionLayerImage != null) {
 			selectionLayerImage.dispose();
 			selectionLayerImage = null;
@@ -1013,7 +995,6 @@ found:			for(int a = x; a < xMax; a++) {
 		if(textLayerImage != null) textLayerImage.dispose();
 		try {
 			if(recalc) {
-				executors = Executors.newFixedThreadPool(getNumberOfThreads());
 				calcExtents(monitor);
 			}
 			layoutWords(wordsToUse, monitor);
@@ -1023,7 +1004,7 @@ found:			for(int a = x; a < xMax; a++) {
 		}
 		zoomFit();
 		redraw();
-		updateScrollbars();		
+		updateScrollbars();
 	}
 
 	private void updateScrollbars() {
@@ -1213,7 +1194,7 @@ found:			for(int a = x; a < xMax; a++) {
 //	}
 
 	public void setBoostFactor(float boostFactor) {
-		Assert.isLegal(boostFactor > 0);
+		Assert.isLegal(boostFactor != 0);
 		this.boostFactor = boostFactor;
 	}
 
@@ -1234,4 +1215,33 @@ found:			for(int a = x; a < xMax; a++) {
 		return minFontSize;
 	}
 
+	public int getBoost() {
+		return boost;
+	}
+
+	public float getBoostFactor() {
+		return boostFactor;
+	}
+
+	@Override
+	public String toString() {
+		return "TagCloud [cloudArea=" + cloudArea + ", maxFontSize="
+				+ maxFontSize + ", gc=" + gc + ", highlightColor="
+				+ highlightColor + ", currentWord=" + currentWord
+				+ ", opacity=" + opacity + ", origin=" + origin
+				+ ", textLayerImage=" + textLayerImage
+				+ ", selectionLayerImage=" + selectionLayerImage
+				+ ", zoomLayerImage=" + zoomLayerImage + ", wordsToUse="
+				+ wordsToUse + ", initialized=" + initialized
+				+ ", currentZoom=" + currentZoom + ", region=" + region
+				+ ", minFontSize=" + minFontSize + ", selection=" + selection
+				+ ", cloudMatrix=" + Arrays.toString(cloudMatrix)
+				+ ", executors=" + executors + ", layouter=" + layouter
+				+ ", boost=" + boost + ", regionOffset=" + regionOffset
+				+ ", antialias=" + antialias + ", boostFactor=" + boostFactor
+				+ "]";
+	}
+
+	
+	
 }

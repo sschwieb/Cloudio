@@ -38,7 +38,7 @@ import org.schwiebert.cloudio.util.Word;
  */
 public class AboutDialog extends Dialog {
 	
-	
+	private static final int RE_LAYOUT = 2;
 	private TagCloud tc;
 
 	public AboutDialog(Shell parentShell) {
@@ -46,7 +46,6 @@ public class AboutDialog extends Dialog {
 		setBlockOnOpen(false);
 	}
 	
-
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		parent.setLayout(new GridLayout());
@@ -91,8 +90,6 @@ public class AboutDialog extends Dialog {
 			values.add(w);
 		}
 		tc.setWords(values, null);
-		// FIXME Should not be required to re-calc extents!
-		tc.layoutCloud(null, true);
 		Label l = new Label(parent, SWT.NONE);
 		l.setText("Written by Stephan Schwiebert, 2011");
 		return tc;
@@ -101,8 +98,17 @@ public class AboutDialog extends Dialog {
 	protected void createButtonsForButtonBar(Composite parent) {
 		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
 				true);
+		createButton(parent, RE_LAYOUT, "Do the inevitable...", false);
 	}
 
+	@Override
+	protected void buttonPressed(int buttonId) {
+		if(buttonId == RE_LAYOUT) {
+			tc.layoutCloud(null, false);
+		} else {
+			super.buttonPressed(buttonId);			
+		}
+	}
 
 	private Word getWord(String string, String[] fontNames, Color[] colors) {
 		Word w = new Word(string);

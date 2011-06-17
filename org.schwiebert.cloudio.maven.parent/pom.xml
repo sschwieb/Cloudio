@@ -11,6 +11,7 @@
 	<modules>
 		<module>../org.schwiebert.cloudio.ui</module>
 		<module>../org.schwiebert.cloudio.ui.feature</module>
+		<module>../org.schwiebert.cloudio.ui.tests</module>
 		<module>../org.schwiebert.cloudio.application</module>
 		<module>../org.schwiebert.cloudio.application.feature</module>
 		<module>../org.schwiebert.cloudio.rcp</module>

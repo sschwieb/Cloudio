@@ -31,9 +31,11 @@ public class RectTree {
 	
 	private short xOffset, yOffset;
 	
-	private RectNode root;
+	private final RectNode root;
 	
 	private LinkedList<RectNode> leaves;
+	
+	private static short EMPTY = -1, MISC = 0;
 	
 	public Rectangle minBounds = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE, Short.MIN_VALUE, Short.MIN_VALUE);
 	
@@ -47,7 +49,7 @@ public class RectTree {
 		
 		private final SmallRect[] childAreas;
 
-		short filled = -1;
+		short filled = EMPTY;
 
 		public RectNode(SmallRect rect) {
 			this.rect = rect;
@@ -115,21 +117,21 @@ public class RectTree {
 						filled = false; 
 						break;
 					}
-					if(children[ix].filled == 0) {
+					if(children[ix].filled == EMPTY) {
 						filled = false;
 						break;
 					}
 				}			
 			}
 			if(filled) {
-				this.filled = 0;
+				this.filled = MISC;
 			}
 		}
 		
 		public boolean isAvailable(final SmallRect oRect) {
-			if(filled > 0) return false;
+			if(filled >= MISC) return false;
 			if(children == null) {
-				return filled == -1;
+				return filled == EMPTY;
 			}
 			final int i = getChildIndex(oRect);
 			if(children[i] == null) return true;
@@ -178,7 +180,7 @@ public class RectTree {
 		Iterator<RectNode> nodes = leaves.iterator();
 		while(nodes.hasNext()) {
 			RectNode node = nodes.next();
-			if(mainTree[(node.rect.x+xOffset)/minResolution][(node.rect.y+yOffset)/minResolution] != -1) {
+			if(mainTree[(node.rect.x+xOffset)/minResolution][(node.rect.y+yOffset)/minResolution] != EMPTY) {
 				nodes.remove();
 				leaves.addFirst(node);
 				return false;
@@ -197,7 +199,7 @@ public class RectTree {
 
 	private void addLeaves(List<RectNode> leaves, RectNode current) {
 		if(current.children == null)  {
-			if(current.filled != 0) {
+			if(current.filled != EMPTY) {
 			leaves.add(current);
 			}
 		} else {

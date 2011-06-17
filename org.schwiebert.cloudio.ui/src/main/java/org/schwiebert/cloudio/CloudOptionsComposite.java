@@ -39,6 +39,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FontDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.schwiebert.cloudio.util.Word;
 
 /**
  * 
@@ -79,6 +80,11 @@ public class CloudOptionsComposite extends Composite {
 	protected void updateColors() {
 		ICloudLabelProvider lp = (ICloudLabelProvider) viewer.getLabelProvider();
 		lp.setColors(colors);
+		List<Word> words = viewer.getCloud().getWords();
+		for (Word word : words) {
+			word.setColor(lp.getColor(word.data));
+		}
+		viewer.getCloud().redrawTextLayerImage();
 	}
 	
 	protected void updateFonts() {
@@ -291,6 +297,7 @@ public class CloudOptionsComposite extends Composite {
 				Color c = new Color(Display.getDefault(), color);
 				viewer.getCloud().setBackground(c);
 				old.dispose();
+				viewer.getCloud().redrawTextLayerImage();
 			}
 			
 			@Override
@@ -310,6 +317,7 @@ public class CloudOptionsComposite extends Composite {
 				Color c = new Color(Display.getDefault(), color);
 				viewer.getCloud().setSelectionColor(c);
 				old.dispose();
+				viewer.getCloud().redrawTextLayerImage();
 			}
 			
 			@Override

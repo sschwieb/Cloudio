@@ -26,6 +26,8 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
@@ -221,14 +223,20 @@ public class TagCloud extends Canvas {
 		initListeners();
 		textLayerImage = new Image(getDisplay(), 100,100);
 		zoomFit();
+		addDisposeListener(new DisposeListener() {
+			
+			@Override
+			public void widgetDisposed(DisposeEvent e) {
+				internalDispose();
+			}
+		});
 	}
 
 	/**
 	 * Disposes all system resources created in this class. Resources which were
 	 * provided through a {@link ICloudLabelProvider} etc are not disposed.
 	 */
-	@Override
-	public void dispose() {
+	private void internalDispose() {
 		removeListeners();
 		textLayerImage.dispose();
 		if(selectionLayerImage != null) {
@@ -237,7 +245,7 @@ public class TagCloud extends Canvas {
 		if(zoomLayerImage != null) {
 			zoomLayerImage.dispose();
 		}
-		if(!this.isDisposed()) { // Should dispose gc, but can't...
+		if(!this.isDisposed()) {
 			gc.dispose();
 		}
 		super.dispose();
@@ -264,6 +272,7 @@ public class TagCloud extends Canvas {
 	 * Resets the zoom to 100 % (original size)
 	 */
 	public void zoomReset() {
+		checkWidget();
 		if(selectionLayerImage == null) return;
 		zoomLayerImage = new Image(getDisplay(), selectionLayerImage.getBounds().width, selectionLayerImage.getBounds().height);
 		GC gc = new GC(zoomLayerImage);
@@ -275,6 +284,7 @@ public class TagCloud extends Canvas {
 	}
 	
 	public double getZoom() {
+		checkWidget();
 		return currentZoom;
 	}
 	
@@ -284,6 +294,7 @@ public class TagCloud extends Canvas {
 	 * factor is too small or too large). 
 	 */
 	public void zoomFit() {
+		checkWidget();
 		if(selectionLayerImage == null) return;
 		Rectangle imageBound = selectionLayerImage.getBounds();
 		Rectangle destRect = getClientArea();
@@ -294,6 +305,7 @@ public class TagCloud extends Canvas {
 	}
 
 	private void zoom(double s) {
+		checkWidget();
 		if(selectionLayerImage == null) return;
 		if(s < 0.1) s = 0.1;
 		if(s > 10) s = 10;
@@ -317,6 +329,7 @@ public class TagCloud extends Canvas {
 	 * Zooms in, by the factor of 10 percent.
 	 */
 	public void zoomIn() {
+		checkWidget();
 		zoom(currentZoom * 1.1);
 		redraw();
 	}
@@ -325,6 +338,7 @@ public class TagCloud extends Canvas {
 	 * Zooms out, by the factor of 10 percent.
 	 */
 	public void zoomOut() {
+		checkWidget();
 		zoom(currentZoom * 0.9);
 		redraw();
 	}
@@ -344,7 +358,7 @@ public class TagCloud extends Canvas {
 	 * @param word
 	 * @return
 	 */
-	protected float getFontSize(Word word) {
+	private float getFontSize(Word word) {
 		float size = (float) (word.weight * maxFontSize);
 		size += minFontSize;
 		return size;
@@ -358,7 +372,7 @@ public class TagCloud extends Canvas {
 	 */
 	private void drawWord(final GC gc, final Word word, final Color color) {
 		gc.setForeground(color);
-		Font font = new Font(gc.getDevice(), word.fontData);
+		Font font = new Font(gc.getDevice(), word.getFontData());
 		gc.setFont(font);
 		gc.setAntialias(antialias);
 		gc.setAlpha(opacity);
@@ -393,6 +407,7 @@ public class TagCloud extends Canvas {
 	 * @param monitor 
 	 */
 	protected void calcExtents(IProgressMonitor monitor) {
+		checkWidget();
 		if(monitor != null) {
 			monitor.subTask("Calculating word boundaries...");
 		}
@@ -402,7 +417,7 @@ public class TagCloud extends Canvas {
 		int next = 10;
 		executors = Executors.newFixedThreadPool(getNumberOfThreads());
 		for (final Word word : wordsToUse) {
-			FontData[] fontData = word.fontData;
+			FontData[] fontData = word.getFontData();
 			int fontSize = (int) getFontSize(word);
 			for (FontData data : fontData) {
 				data.setHeight((int)fontSize);
@@ -528,9 +543,10 @@ found:			for(int a = x; a < xMax; a++) {
 	 * Generates the layout of the given words. 
 	 * @param wordsToUse
 	 * @param monitor may be <code>null</code>.
-	 * @return
+	 * @return the number of words which could be placed
 	 */
-	protected void layoutWords(Collection<Word> wordsToUse, IProgressMonitor monitor) {
+	protected int layoutWords(Collection<Word> wordsToUse, IProgressMonitor monitor) {
+		checkWidget();
 		if(monitor != null) {
 			monitor.subTask("Placing words...");
 		}
@@ -547,6 +563,7 @@ found:			for(int a = x; a < xMax; a++) {
 		gc.setBackground(getBackground());
 		gc.fillRectangle(tmpImage.getBounds());
 		executors = Executors.newFixedThreadPool(1);
+		int success = 0;
 		if(wordsToUse != null) {
 			double step = 100D / wordsToUse.size();
 			long lTime = 0;
@@ -560,13 +577,14 @@ found:			for(int a = x; a < xMax; a++) {
 					System.out.println("Failed to place " + word.string);
 					continue;
 				}
+				success++;
 				region.add(word.x, word.y, word.width, word.height);
 				final Word wrd = word;
 				executors.execute(new Runnable() {
 					
 					@Override
 					public void run() {
-						drawWord(g, wrd, wrd.color);
+						drawWord(g, wrd, wrd.getColor());
 					}
 				});
 				current += step;
@@ -630,6 +648,7 @@ found:			for(int a = x; a < xMax; a++) {
 		if(monitor != null) {
 			monitor.worked(10);
 		}
+		return success;
 	}
 	
 	/**
@@ -641,13 +660,14 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param values
 	 * @param maxWords 
 	 */
-	public void setWords(List<Word> values, IProgressMonitor monitor) {
+	public int setWords(List<Word> values, IProgressMonitor monitor) {
+		checkWidget();
 		Assert.isLegal(values != null, "List must not be null!");
 		for (Word word : values) {
 			Assert.isLegal(word != null, "Word must not be null!");
 			Assert.isLegal(word.string != null, "Word must define a string!");
-			Assert.isLegal(word.color != null, "A word must define a color");
-			Assert.isLegal(word.fontData != null, "A word must define a fontdata array");
+			Assert.isLegal(word.getColor() != null, "A word must define a color");
+			Assert.isLegal(word.getFontData() != null, "A word must define a fontdata array");
 			Assert.isLegal(word.weight >= 0, "Word weight must be between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.weight <= 1, "Word weight must be between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.angle >= -90, "Angle must be between -90 and +90 (inclusive), but was " + word.angle);
@@ -667,7 +687,7 @@ found:			for(int a = x; a < xMax; a++) {
 				if(i == 0) break;
 			}
 		}
-		layoutCloud(monitor, true);
+		return layoutCloud(monitor, true);
 	}
 
 	/**
@@ -846,45 +866,53 @@ found:			for(int a = x; a < xMax; a++) {
 	
 	@Override
 	public void addMouseListener(MouseListener listener) {
+		checkWidget();
 		Assert.isLegal(listener != null);
 		mouseListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseMoveListener(MouseMoveListener listener) {
+		checkWidget();
 		Assert.isLegal(listener != null);
 		mouseMoveListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseTrackListener(MouseTrackListener listener) {
+		checkWidget();
 		Assert.isLegal(listener != null);
 		mouseTrackListeners.add(listener);
 	}
 	
 	@Override
 	public void addMouseWheelListener(MouseWheelListener listener) {
+		checkWidget();
 		Assert.isLegal(listener != null);
 		mouseWheelListeners.add(listener);
 	}
 	
 	@Override
 	public void removeMouseListener(MouseListener listener) {
+		checkWidget();
 		mouseListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseMoveListener(MouseMoveListener listener) {
+		checkWidget();
 		mouseMoveListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseTrackListener(MouseTrackListener listener) {
+		checkWidget();
 		mouseTrackListeners.remove(listener);
 	}
 	
 	@Override
 	public void removeMouseWheelListener(MouseWheelListener listener) {
+		checkWidget();
 		mouseWheelListeners.remove(listener);
 	}
 	
@@ -936,6 +964,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param words must not be <code>null</code>.
 	 */
 	public void setSelection(Set<Word> words) {
+		checkWidget();
 		Assert.isNotNull(words, "Selection must not be null!");
 		if(wordsToUse == null) return; 
 		this.selection = new HashSet<Word>(words);
@@ -955,6 +984,18 @@ found:			for(int a = x; a < xMax; a++) {
 		zoom(currentZoom);
 		redraw();
 	}
+		
+	public void redrawTextLayerImage() {
+		if(wordsToUse == null) return; 
+		GC gc = new GC(textLayerImage);
+		gc.setBackground(getBackground());
+		gc.fillRectangle(0, 0, textLayerImage.getBounds().width, textLayerImage.getBounds().height);
+		for (Word word : wordsToUse) {
+			drawWord(gc, word, word.getColor());
+		}
+		gc.dispose();
+		setSelection(getSelection());
+	}
 	
 	/**
 	 * Returns the set of selected elements.
@@ -962,6 +1003,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @return
 	 */
 	public Set<Word> getSelection() {
+		checkWidget();
 		return selection;
 	}
 	
@@ -971,12 +1013,14 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param color
 	 */
 	public void setSelectionColor(Color color) {
+		checkWidget();
 		Assert.isLegal(color != null, "Color must not be null!");
 		this.highlightColor = color;
 	}
 	
 	@Override
 	public void setBackground(Color color) {
+		checkWidget();
 		Assert.isLegal(color != null, "Color must not be null!");
 		super.setBackground(color);
 	}
@@ -984,8 +1028,10 @@ found:			for(int a = x; a < xMax; a++) {
 	/**
 	 * Does a full relayout of all displayed elements.
 	 * @param monitor 
+	 * @return 
 	 */
-	public void layoutCloud(IProgressMonitor monitor, boolean recalc) {
+	public int layoutCloud(IProgressMonitor monitor, boolean recalc) {
+		checkWidget();
 		resetLayout();
 		if(selectionLayerImage != null) {
 			selectionLayerImage.dispose();
@@ -993,11 +1039,12 @@ found:			for(int a = x; a < xMax; a++) {
 		}
 		regionOffset = new Point(0, 0);
 		if(textLayerImage != null) textLayerImage.dispose();
+		int placedWords = 0;
 		try {
 			if(recalc) {
 				calcExtents(monitor);
 			}
-			layoutWords(wordsToUse, monitor);
+			placedWords = layoutWords(wordsToUse, monitor);
 		} catch (Exception e) {
 			MessageDialog.openError(getShell(), "Exception while layouting data", "An exception occurred while layouting: " + e.getMessage());
 			e.printStackTrace();
@@ -1005,6 +1052,7 @@ found:			for(int a = x; a < xMax; a++) {
 		zoomFit();
 		redraw();
 		updateScrollbars();
+		return placedWords;
 	}
 
 	private void updateScrollbars() {
@@ -1044,6 +1092,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param maxSize
 	 */
 	public void setMaxFontSize(int maxSize) {
+		checkWidget();
 		Assert.isLegal(maxSize > 0, "Font Size must be greater than zero, but was " + maxSize + "!");
 		maxFontSize = maxSize;
 	}
@@ -1054,6 +1103,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param opacity
 	 */
 	public void setOpacity(int opacity) {
+		checkWidget();
 		Assert.isLegal(opacity > 0, "Opacity must be greater than zero: " + opacity);
 		Assert.isLegal(opacity < 256, "Opacity must be less than 256: " + opacity);
 		this.opacity = opacity;
@@ -1065,6 +1115,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param size
 	 */
 	public void setMinFontSize(int size) {
+		checkWidget();
 		Assert.isLegal(size > 0, "Font Size must be greater zero: " + size);
 		this.minFontSize = size;
 	}
@@ -1075,6 +1126,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @return
 	 */
 	public ImageData getImageData() {
+		checkWidget();
 		if(textLayerImage == null) return null;
 		return textLayerImage.getImageData();
 	}
@@ -1085,6 +1137,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param boost
 	 */
 	public void setBoost(int boost) {
+		checkWidget();
 		Assert.isLegal(boost >= 0, "Boost cannot be negative");
 		this.boost = boost;
 	}
@@ -1094,6 +1147,7 @@ found:			for(int a = x; a < xMax; a++) {
 	 * @param enabled
 	 */
 	public void setAntiAlias(boolean enabled) {
+		checkWidget();
 		if(enabled) {
 			antialias = SWT.ON;
 		} else {
@@ -1203,23 +1257,28 @@ found:			for(int a = x; a < xMax; a++) {
 	}
 
 	public void setLayouter(ILayouter layouter) {
+		checkWidget();
 		Assert.isLegal(layouter != null, "Layouter must not be null!");
 		this.layouter = layouter;
 	}
 
 	public int getMaxFontSize() {
+		checkWidget();
 		return maxFontSize;
 	}
 
 	public int getMinFontSize() {
+		checkWidget();
 		return minFontSize;
 	}
 
 	public int getBoost() {
+		checkWidget();
 		return boost;
 	}
 
 	public float getBoostFactor() {
+		checkWidget();
 		return boostFactor;
 	}
 
@@ -1240,6 +1299,10 @@ found:			for(int a = x; a < xMax; a++) {
 				+ ", boost=" + boost + ", regionOffset=" + regionOffset
 				+ ", antialias=" + antialias + ", boostFactor=" + boostFactor
 				+ "]";
+	}
+
+	public List<Word> getWords() {
+		return wordsToUse;
 	}
 
 	

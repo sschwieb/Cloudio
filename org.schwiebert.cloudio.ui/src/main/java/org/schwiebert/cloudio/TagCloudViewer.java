@@ -197,14 +197,14 @@ public class TagCloudViewer extends ContentViewer {
 		short i = 0;
 		for (Object element : elements) {
 			Word word = new Word(labelProvider.getLabel(element));
-			word.color = labelProvider.getColor(element);
+			word.setColor(labelProvider.getColor(element));
 			word.weight = labelProvider.getWeight(element);
-			word.fontData = labelProvider.getFontData(element);
+			word.setFontData(labelProvider.getFontData(element));
 			word.angle = labelProvider.getAngle(element);
 			word.data = element;
 			Assert.isNotNull(word.string, "Labelprovider must return a String for each element");
-			Assert.isNotNull(word.color, "Labelprovider must return a Color for each element");
-			Assert.isNotNull(word.fontData, "Labelprovider must return a FontData for each element");
+			Assert.isNotNull(word.getColor(), "Labelprovider must return a Color for each element");
+			Assert.isNotNull(word.getFontData(), "Labelprovider must return a FontData for each element");
 			Assert.isLegal(word.weight >= 0, "Labelprovider must return a weight between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.weight <= 1, "Labelprovider must return a weight between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.angle >= -90, "Angle of an element must be between -90 and +90 (inclusive), but was " + word.angle);

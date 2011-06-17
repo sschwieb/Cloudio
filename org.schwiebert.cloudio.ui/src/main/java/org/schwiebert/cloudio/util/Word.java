@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.schwiebert.cloudio.util;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
@@ -34,13 +35,22 @@ public class Word {
 
 	public int y;
 
-	public Color color;
+	private Color color;
 	
 	public RectTree tree;
 
 	public float angle;
 
-	public FontData[] fontData;
+	private FontData[] fontData;
+
+	public FontData[] getFontData() {
+		return fontData;
+	}
+
+	public void setFontData(FontData[] fontData) {
+		Assert.isLegal(fontData != null, "FontData-Array must not be null!");
+		this.fontData = fontData.clone();
+	}
 
 	public short id;
 
@@ -55,6 +65,18 @@ public class Word {
 	@Override
 	public String toString() {
 		return string;
+	}
+
+	public void setColor(Color color) {
+		Assert.isLegal(color != null, "Color must not be null!");
+		Assert.isLegal(!color.isDisposed(), "Color is disposed!");
+		this.color = color;
+	}
+	
+	public Color getColor() {
+		Assert.isLegal(color != null, "Color must not be null!");
+		Assert.isLegal(!color.isDisposed(), "Color is disposed!");
+		return color;
 	}
 
 }

@@ -77,7 +77,7 @@ public class TypeCollector {
 					if (!Character.isLetter(string.charAt(string.length() - 1))) {
 						string = string.substring(0, string.length() - 1);
 					}
-					if (stops.contains(string.toLowerCase()) || string.trim().length() == 0) {
+					if (stops.contains(string.toLowerCase()) || string.trim().length() <= 1) {
 						lastBoundary = boundary;
 						continue;
 					}

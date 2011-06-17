@@ -74,14 +74,18 @@ public class AboutDialog extends Dialog {
 		Word w = getWord("Cloudio", fontNames, colors);
 		w.weight=0.95;
 		w.angle=-35;
-		w.color = Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
+		w.setColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 		values.add(w);
 		w = getWord("Inspired by Wordle", fontNames, colors);
-		w.color = Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
+		w.setColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 		w.angle = (float) (Math.random() * 90);
 		if(Math.random() < 0.5) w.angle = -w.angle;
 		w.weight=0.2;
 		if(Math.random() < 0.5) w.angle = -w.angle;
+		values.add(w);
+		w = getWord("Used by " + System.getProperty("user.name"), fontNames, colors);
+		w.setColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
+		w.weight = 0.2;
 		values.add(w);
 		for(int i = 0; i < 20; i++) {
 			w = getWord("Cloudio", fontNames, colors);
@@ -112,13 +116,13 @@ public class AboutDialog extends Dialog {
 
 	private Word getWord(String string, String[] fontNames, Color[] colors) {
 		Word w = new Word(string);
-		w.color = colors[(int) (Math.random()*colors.length-1)];
+		w.setColor(colors[(int) (Math.random()*colors.length-1)]);
 		w.weight = Math.random()/2;
-		w.fontData = getShell().getFont().getFontData().clone();
+		w.setFontData(getShell().getFont().getFontData());
 		w.angle = (float) (Math.random() * 20);
 		if(Math.random() < 0.5) w.angle = -w.angle;
 		String name = fontNames[(int) (Math.random()*(fontNames.length-1))];
-		for (FontData fd : w.fontData) {
+		for (FontData fd : w.getFontData()) {
 			fd.setName(name);
 		}
 		return w;

@@ -120,6 +120,7 @@ public class TypeLabelProvider extends BaseLabelProvider implements
 			Color c = new Color(Display.getDefault(), color);
 			colorList.add(c);
 		}
+		
 	}
 
 	public void setFonts(List<FontData> newFonts) {

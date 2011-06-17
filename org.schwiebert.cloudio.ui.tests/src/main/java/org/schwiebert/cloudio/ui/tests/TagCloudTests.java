@@ -25,6 +25,7 @@ import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -174,9 +175,10 @@ public class TagCloudTests {
 	public void testSetIllegalWords3() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
 		List<Word> words = new ArrayList<Word>();
-		Word word = getWord();
-		word.color = null;
-		words.add(word);
+		Word w = new Word("Word");
+		w.setFontData(composite.getFont().getFontData());
+		w.weight = Math.random();
+		words.add(w);
 		cloud.setWords(words, null);
 	}
 	
@@ -184,9 +186,10 @@ public class TagCloudTests {
 	public void testSetIllegalWords4() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
 		List<Word> words = new ArrayList<Word>();
-		Word word = getWord();
-		word.fontData = null;
-		words.add(word);
+		Word w = new Word("Word");
+		w.setColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+		w.weight = Math.random();
+		words.add(w);
 		cloud.setWords(words, null);
 	}
 	
@@ -241,9 +244,9 @@ public class TagCloudTests {
 	
 	private Word getWord() {
 		Word w = new Word("Word");
-		w.color = Display.getDefault().getSystemColor(SWT.COLOR_GRAY);
-		w.fontData = composite.getFont().getFontData();
-		w.weight = Math.random();
+		w.setColor(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
+		w.setFontData(composite.getFont().getFontData());
+		w.weight = 1;
 		return w;
 	}
 
@@ -251,17 +254,19 @@ public class TagCloudTests {
 	public void testSetEmptyWordList() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
 		List<Word> words = new ArrayList<Word>();
-		cloud.setWords(words, null);
+		int placed = cloud.setWords(words, null);
+		Assert.assertEquals(0, placed);
 	}
 	
 	@Test
 	public void testSetWordList() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
 		List<Word> words = new ArrayList<Word>();
-		for(int i = 0; i < words.size(); i++) {
+		for(int i = 0; i < 10; i++) {
 			words.add(getWord());
 		}
-		cloud.setWords(words, null);
+		int placed = cloud.setWords(words, null);
+		Assert.assertEquals(10, placed);
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
@@ -417,6 +422,74 @@ public class TagCloudTests {
 		Assert.assertEquals(-2.2F, cloud.getBoostFactor());
 	}
 	
+	
+	@Test
+	public void testLayout() {
+		TagCloud cloud = new TagCloud(composite, SWT.NONE);
+		List<Word> words = new ArrayList<Word>();
+		for(int i = 0; i < 10; i++) {
+			words.add(getWord());
+		}
+		// Initial position must be 0/0
+		for (Word word : words) {
+			Assert.assertTrue(word.x == 0);
+			Assert.assertTrue(word.y == 0);
+		}
+		cloud.setWords(words, null);
+		List<Rectangle> rects = new ArrayList<Rectangle>();
+		// Elements must have been placed
+		for (Word word : words) {
+			Assert.assertTrue(word.x != 0);
+			Assert.assertTrue(word.y != 0);
+			word.angle = 45f;
+			rects.add(new Rectangle(word.x, word.y, word.width, word.height));
+		}
+		cloud.layoutCloud(null, false);
+		boolean posChanged = false;
+		boolean rectChanged = false;
+		for(int i = 0; i < words.size(); i++) {
+			Word w = words.get(i);
+			Rectangle r = rects.get(i);
+			if(w.x != r.x || w.y != r.y) {
+				posChanged = true;
+			}
+			if(w.width != r.width || w.height != r.height) {
+				rectChanged = true;
+			}
+		}
+		// Positions must have been changed
+		Assert.assertTrue(posChanged);
+		// Bounds must not have been changed
+		Assert.assertFalse(rectChanged);
+		cloud.layoutCloud(null, true);
+		posChanged = false;
+		rectChanged = false;
+		for(int i = 0; i < words.size(); i++) {
+			Word w = words.get(i);
+			Rectangle r = rects.get(i);
+			if(w.x != r.x || w.y != r.y) {
+				posChanged = true;
+			}
+			if(w.width != r.width || w.height != r.height) {
+				rectChanged = true;
+			}
+		}
+		// Both positions an bounds must have changed
+		Assert.assertTrue(posChanged);
+		Assert.assertTrue(rectChanged);
+	}
+	
+	@Test
+	public void testLayoutTooLarge() {
+		TagCloud cloud = new TagCloud(composite, SWT.NONE);
+		List<Word> words = new ArrayList<Word>();
+		Word w = getWord();
+		words.add(w);
+		cloud.setMaxFontSize(5000);
+		int placed = cloud.setWords(words, null);
+		Assert.assertEquals(0, placed);
+	}
+	
 	class UniversalListener implements MouseListener, MouseTrackListener, MouseWheelListener, MouseMoveListener {
 	
 		private int mouseUp;
@@ -504,20 +577,6 @@ public class TagCloudTests {
 		cloud.addMouseWheelListener(ml);
 		// TODO: Fire & count events
 		cloud.removeMouseWheelListener(ml);
-	}
-	
-	@Test
-	public void testLayout1() {
-		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		cloud.layoutCloud(null, false);
-		// TODO: Assert something...
-	}
-	
-	@Test
-	public void testLayout2() {
-		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		cloud.layoutCloud(null, true);
-		// TODO: Assert something...
 	}
 	
 }

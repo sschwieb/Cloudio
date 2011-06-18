@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.schwiebert.cloudio;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +32,8 @@ import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.MouseWheelListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -130,12 +131,6 @@ public class TagCloud extends Canvas {
 	 */
 	private List<Word> wordsToUse;
 	
-	/**
-	 * Set of event listeners
-	 */
-	//private final Set<EventListener> myListeners = new HashSet<EventListener>();
-	
-	
 	private boolean initialized = false;
 	
 	/**
@@ -156,7 +151,7 @@ public class TagCloud extends Canvas {
 	/**
 	 * Set of selected words
 	 */
-	private HashSet<Word> selection = new HashSet<Word>();
+	private Set<Word> selection = new HashSet<Word>();
 	
 	private short[][] cloudMatrix;
 	
@@ -190,6 +185,8 @@ public class TagCloud extends Canvas {
 
 	private Listener paintListener;
 
+	private Listener mouseTrackListener;
+	
 	private Listener mouseMoveListener;
 
 	private Listener mouseUpListener;
@@ -197,6 +194,8 @@ public class TagCloud extends Canvas {
 	private Listener mouseDCListener;
 
 	private Listener mouseDownListener;
+	
+	private Listener mouseWheelListener;
 
 	private Listener vBarListener;
 
@@ -207,6 +206,8 @@ public class TagCloud extends Canvas {
 	private Set<EventListener> mouseMoveListeners = new HashSet<EventListener>();
 
 	private Set<EventListener> mouseListeners = new HashSet<EventListener>();
+
+	private Set<SelectionListener> selectionListeners = new HashSet<SelectionListener>();
 	
 	/**
 	 * Creates a new Tag cloud on the given parent. To add scroll bars
@@ -262,9 +263,11 @@ public class TagCloud extends Canvas {
 		}
 		removeListener(SWT.MouseDoubleClick, mouseDCListener);
 		removeListener(SWT.MouseDown, mouseDownListener);
-		removeListener(SWT.MouseMove, mouseMoveListener);
+		removeListener(SWT.MouseMove, mouseTrackListener);
 		removeListener(SWT.MouseUp, mouseUpListener);
 		removeListener(SWT.Resize, resizeListener);
+		removeListener(SWT.MouseMove, mouseMoveListener);
+		removeListener(SWT.MouseWheel, mouseWheelListener);
 	}
 	
 
@@ -308,7 +311,7 @@ public class TagCloud extends Canvas {
 		checkWidget();
 		if(selectionLayerImage == null) return;
 		if(s < 0.1) s = 0.1;
-		if(s > 10) s = 10;
+		if(s > 3) s = 3;
 		int width = (int) (selectionLayerImage.getBounds().width*s);
 		int height = (int) (selectionLayerImage.getBounds().height*s);
 		if(width == 0 || height == 0) return;
@@ -635,6 +638,13 @@ found:			for(int a = x; a < xMax; a++) {
 		r.height += 5;
 		textLayerImage = new Image(getDisplay(), r.width, r.height);
 		gc = new GC(textLayerImage);
+		if(r.width > tmpImage.getBounds().width - r.x || r.height >= tmpImage.getBounds().width - r.y) {
+			MessageDialog.openError(getShell(), "Failed to place image", "The drawn image does not fit into the available region.");
+			tmpImage.dispose();
+			region.dispose();
+			gc.dispose();
+			return 0;
+		}
 		gc.drawImage(tmpImage, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
 		this.regionOffset = new Point(r.x, r.y);
 		tmpImage.dispose();
@@ -714,7 +724,7 @@ found:			for(int a = x; a < xMax; a++) {
 		initialized = true;
 		final ScrollBar hBar = this.getHorizontalBar();
 		if(hBar != null) {
-			hBarListener = new Listener () {
+			hBarListener = new Listener() {
 				@Override
 				public void handleEvent (Event e) {
 					int hSelection = hBar.getSelection();
@@ -728,7 +738,7 @@ found:			for(int a = x; a < xMax; a++) {
 		}
 		final ScrollBar vBar = this.getVerticalBar();
 		if(vBar != null) {
-			vBarListener = new Listener () {
+			vBarListener = new Listener() {
 				@Override
 				public void handleEvent (Event e) {
 					int vSelection = vBar.getSelection ();
@@ -740,7 +750,7 @@ found:			for(int a = x; a < xMax; a++) {
 			};
 			vBar.addListener (SWT.Selection, vBarListener);
 		}
-		resizeListener = new Listener () {
+		resizeListener = new Listener() {
 			@Override
 			public void handleEvent (Event e) {
 				updateScrollbars();
@@ -748,7 +758,7 @@ found:			for(int a = x; a < xMax; a++) {
 			}
 		};
 		this.addListener (SWT.Resize,  resizeListener);
-		paintListener = new Listener () {
+		paintListener = new Listener() {
 			@Override
 			public void handleEvent (Event e) {
 				GC gc = e.gc;
@@ -758,35 +768,42 @@ found:			for(int a = x; a < xMax; a++) {
 				int marginWidth = client.width - rect.width;
 				gc.setBackground(getBackground());
 				if (marginWidth > 0) {
-					gc.fillRectangle (rect.width, 0, marginWidth, client.height);
+					gc.fillRectangle(rect.width, 0, marginWidth, client.height);
 				}
 				int marginHeight = client.height - rect.height;
 				if (marginHeight > 0) {
-					gc.fillRectangle (0, rect.height, client.width, marginHeight);
+					gc.fillRectangle(0, rect.height, client.width, marginHeight);
 				}
-				gc.drawImage (zoomLayerImage, origin.x, origin.y);
+				gc.drawImage(zoomLayerImage, origin.x, origin.y);
 			}
-
 		};
 		this.addListener (SWT.Paint, paintListener);
-		
-		mouseMoveListener = new Listener() {
+		mouseTrackListener = new Listener() {
 			@Override
 			public void handleEvent(Event event) {
 				Word word = getWordAt(new Point(event.x, event.y));
 				MouseEvent me = createMouseEvent(event, word);
 				if(currentWord != null) {
 					if(word == currentWord) {
-						fireMouseEvent(me, SWT.MouseHover, mouseMoveListeners);
+						fireMouseEvent(me, SWT.MouseHover, mouseTrackListeners);
 					} else {
 						currentWord = null;
-						fireMouseEvent(me, SWT.MouseExit, mouseMoveListeners);
+						fireMouseEvent(me, SWT.MouseExit, mouseTrackListeners);
 					}
 				}
 				if(currentWord == null && word != null) {
 					currentWord = word;
-					fireMouseEvent(me, SWT.MouseEnter, mouseMoveListeners);
+					fireMouseEvent(me, SWT.MouseEnter, mouseTrackListeners);
 				}
+			}
+		};
+		this.addListener(SWT.MouseMove, mouseTrackListener);
+		mouseMoveListener = new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				Word word = getWordAt(new Point(event.x, event.y));
+				MouseEvent me = createMouseEvent(event, word);
+				fireMouseEvent(me, SWT.MouseMove, mouseMoveListeners);
 			}
 		};
 		this.addListener(SWT.MouseMove, mouseMoveListener);
@@ -796,7 +813,6 @@ found:			for(int a = x; a < xMax; a++) {
 				Word word = getWordAt(new Point(event.x, event.y));
 				MouseEvent me = createMouseEvent(event, word);
 				fireMouseEvent(me, SWT.MouseUp, mouseListeners);
-				
 			}
 		};
 		this.addListener(SWT.MouseUp, mouseUpListener);
@@ -807,7 +823,6 @@ found:			for(int a = x; a < xMax; a++) {
 				MouseEvent me = createMouseEvent(event, word);
 				fireMouseEvent(me, SWT.MouseDoubleClick, mouseListeners);
 			}
-	
 		};
 		this.addListener(SWT.MouseDoubleClick, mouseDCListener);
 		mouseDownListener = new Listener() {
@@ -817,11 +832,17 @@ found:			for(int a = x; a < xMax; a++) {
 				MouseEvent me = createMouseEvent(event, word);
 				fireMouseEvent(me, SWT.MouseDown, mouseListeners);
 			}
-			
 		};
 		this.addListener(SWT.MouseDown, mouseDownListener);
-		
-
+		mouseWheelListener = new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				Word word = getWordAt(new Point(event.x, event.y));
+				MouseEvent me = createMouseEvent(event, word);
+				fireMouseEvent(me, SWT.MouseWheel, mouseWheelListeners);
+			}
+		};
+		this.addListener(SWT.MouseWheel, mouseWheelListener);
 	}
 	
 	/**
@@ -892,6 +913,12 @@ found:			for(int a = x; a < xMax; a++) {
 		mouseWheelListeners.add(listener);
 	}
 	
+	public void addSelectionListener(SelectionListener listener) {
+		checkWidget();
+		Assert.isLegal(listener != null);
+		selectionListeners .add(listener);
+	}
+	
 	@Override
 	public void removeMouseListener(MouseListener listener) {
 		checkWidget();
@@ -914,6 +941,11 @@ found:			for(int a = x; a < xMax; a++) {
 	public void removeMouseWheelListener(MouseWheelListener listener) {
 		checkWidget();
 		mouseWheelListeners.remove(listener);
+	}
+	
+	public void removeSelectionListener(SelectionListener listener) {
+		checkWidget();
+		selectionListeners.remove(listener);
 	}
 	
 	private MouseEvent createMouseEvent(Event event, Word word) {
@@ -967,8 +999,8 @@ found:			for(int a = x; a < xMax; a++) {
 		checkWidget();
 		Assert.isNotNull(words, "Selection must not be null!");
 		if(wordsToUse == null) return; 
-		this.selection = new HashSet<Word>(words);
-		this.selection.retainAll(wordsToUse);
+		Set<Word> selection = new HashSet<Word>(words);
+		selection.retainAll(wordsToUse);
 		int w = textLayerImage.getBounds().width;
 		int h = textLayerImage.getBounds().height;
 		if(selectionLayerImage != null) {
@@ -980,11 +1012,27 @@ found:			for(int a = x; a < xMax; a++) {
 		for (Word word : selection) {
 			drawWord(gc, word, highlightColor);			
 		}
+		if(!selection.equals(this.selection)) {
+			this.selection = selection;
+			fireSelectionChanged();
+		}
 		gc.dispose();
 		zoom(currentZoom);
 		redraw();
 	}
 		
+	private void fireSelectionChanged() {
+		Event e = new Event();
+		e.widget = this;
+		final SelectionEvent event = new SelectionEvent(e);
+		event.data = getSelection();
+		event.widget = this;
+		event.display = Display.getCurrent();
+		for (SelectionListener listener : selectionListeners) {
+			listener.widgetSelected(event);
+		}
+	}
+
 	public void redrawTextLayerImage() {
 		if(wordsToUse == null) return; 
 		GC gc = new GC(textLayerImage);
@@ -1004,7 +1052,8 @@ found:			for(int a = x; a < xMax; a++) {
 	 */
 	public Set<Word> getSelection() {
 		checkWidget();
-		return selection;
+		Set<Word> copy = new HashSet<Word>(selection);
+		return copy;
 	}
 	
 	/**
@@ -1282,29 +1331,9 @@ found:			for(int a = x; a < xMax; a++) {
 		return boostFactor;
 	}
 
-	@Override
-	public String toString() {
-		return "TagCloud [cloudArea=" + cloudArea + ", maxFontSize="
-				+ maxFontSize + ", gc=" + gc + ", highlightColor="
-				+ highlightColor + ", currentWord=" + currentWord
-				+ ", opacity=" + opacity + ", origin=" + origin
-				+ ", textLayerImage=" + textLayerImage
-				+ ", selectionLayerImage=" + selectionLayerImage
-				+ ", zoomLayerImage=" + zoomLayerImage + ", wordsToUse="
-				+ wordsToUse + ", initialized=" + initialized
-				+ ", currentZoom=" + currentZoom + ", region=" + region
-				+ ", minFontSize=" + minFontSize + ", selection=" + selection
-				+ ", cloudMatrix=" + Arrays.toString(cloudMatrix)
-				+ ", executors=" + executors + ", layouter=" + layouter
-				+ ", boost=" + boost + ", regionOffset=" + regionOffset
-				+ ", antialias=" + antialias + ", boostFactor=" + boostFactor
-				+ "]";
-	}
-
 	public List<Word> getWords() {
 		return wordsToUse;
 	}
 
-	
 	
 }

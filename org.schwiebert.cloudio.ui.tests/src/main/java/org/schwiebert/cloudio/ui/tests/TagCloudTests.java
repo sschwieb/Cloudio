@@ -24,11 +24,14 @@ import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.MouseWheelListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
@@ -339,7 +342,7 @@ public class TagCloudTests {
 		Assert.assertNotNull(cloud.getImageData());
 	}
 		
-	// TODO: Test Selection
+	// Test Selection
 	
 	@Test
 	public void testInitialSelection() {
@@ -392,7 +395,6 @@ public class TagCloudTests {
 	
 	// Boost
 	
-
 	@Test(expected=IllegalArgumentException.class)
 	public void testSetInvalidBoost() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
@@ -421,7 +423,6 @@ public class TagCloudTests {
 		cloud.setBoostFactor(-2.2F);
 		Assert.assertEquals(-2.2F, cloud.getBoostFactor());
 	}
-	
 	
 	@Test
 	public void testLayout() {
@@ -490,7 +491,7 @@ public class TagCloudTests {
 		Assert.assertEquals(0, placed);
 	}
 	
-	class UniversalListener implements MouseListener, MouseTrackListener, MouseWheelListener, MouseMoveListener {
+	class UniversalListener implements MouseListener, MouseTrackListener, MouseWheelListener, MouseMoveListener, SelectionListener {
 	
 		private int mouseUp;
 		private int mouseDown;
@@ -500,6 +501,7 @@ public class TagCloudTests {
 		private int mouseExit;
 		private int mouseEnter;
 		private int mouseHover;
+		private Set<Word> selection;
 
 		@Override
 		public void mouseUp(MouseEvent e) {
@@ -519,6 +521,7 @@ public class TagCloudTests {
 		@Override
 		public void mouseMove(MouseEvent e) {
 			mouseMove++;
+			System.out.println("MOVE");
 		}
 
 		@Override
@@ -540,43 +543,99 @@ public class TagCloudTests {
 		public void mouseHover(MouseEvent e) {
 			mouseHover++;
 		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void widgetSelected(SelectionEvent e) {
+			this.selection = (Set<Word>) e.data;
+		}
+
+		@Override
+		public void widgetDefaultSelected(SelectionEvent e) {
+			
+		}
 		
 	}
 	
 	@Test
 	public void testMouseListener() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		MouseListener ml = new UniversalListener();
+		UniversalListener ml = new UniversalListener();
+		List<Word> words = new ArrayList<Word>();
+		Word word = getWord();
+		words.add(word);
+		cloud.setWords(words , null);
+		Event e = new Event();
 		cloud.addMouseListener(ml);
-		// TODO: Fire & count events
+		cloud.notifyListeners(SWT.MouseUp, e);
+		cloud.notifyListeners(SWT.MouseDoubleClick, e);
+		cloud.notifyListeners(SWT.MouseDown, e);
+		Assert.assertEquals(1, ml.mouseUp);
+		Assert.assertEquals(1, ml.mouseDC);
+		Assert.assertEquals(1, ml.mouseDown);
 		cloud.removeMouseListener(ml);
-	}
-	
-	@Test
-	public void testMouseTrackListener() {
-		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		MouseTrackListener ml = new UniversalListener();
-		cloud.addMouseTrackListener(ml);
-		// TODO: Fire & count events
-		cloud.removeMouseTrackListener(ml);
+		cloud.notifyListeners(SWT.MouseUp, e);
+		cloud.notifyListeners(SWT.MouseDoubleClick, e);
+		cloud.notifyListeners(SWT.MouseDown, e);
+		Assert.assertEquals(1, ml.mouseUp);
+		Assert.assertEquals(1, ml.mouseDC);
+		Assert.assertEquals(1, ml.mouseDown);
 	}
 	
 	@Test
 	public void testMouseMoveListener() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		MouseMoveListener ml = new UniversalListener();
+		List<Word> words = new ArrayList<Word>();
+		Word word = getWord();
+		words.add(word);
+		cloud.setWords(words , null);
+		Event e = new Event();
+		e.x = word.x;
+		e.y = word.y;
+		UniversalListener ml = new UniversalListener();
 		cloud.addMouseMoveListener(ml);
-		// TODO: Fire & count events
+		cloud.notifyListeners(SWT.MouseMove, e);
+		Assert.assertEquals(1, ml.mouseMove);
 		cloud.removeMouseMoveListener(ml);
+		cloud.notifyListeners(SWT.MouseMove, e);
+		Assert.assertEquals(1, ml.mouseMove);
 	}
+	
+//	@Test
+//	public void testMouseTrackListener() {
+//		// TODO: Difficult to test... involves zoom, scrollbars...
+//	}
 	
 	@Test
 	public void testMouseWheelListener() {
 		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		MouseWheelListener ml = new UniversalListener();
+		UniversalListener ml = new UniversalListener();
 		cloud.addMouseWheelListener(ml);
-		// TODO: Fire & count events
+		cloud.notifyListeners(SWT.MouseWheel, new Event());
+		Assert.assertEquals(1, ml.mouseScrolled);
 		cloud.removeMouseWheelListener(ml);
+		cloud.notifyListeners(SWT.MouseWheel, new Event());
+		Assert.assertEquals(1, ml.mouseScrolled);
 	}
+
+	@Test
+	public void testSelectionListener() {
+		TagCloud cloud = new TagCloud(composite, SWT.NONE);
+		List<Word> words = new ArrayList<Word>();
+		Word word = getWord();
+		words.add(word);
+		cloud.setWords(words , null);
+		UniversalListener sl = new UniversalListener();
+		cloud.addSelectionListener(sl);
+		cloud.setSelection(new HashSet<Word>(words));
+		Assert.assertEquals(1, sl.selection.size());
+		cloud.setSelection(new HashSet<Word>());
+		Assert.assertEquals(0, sl.selection.size());
+		cloud.removeSelectionListener(sl);
+		cloud.setSelection(new HashSet<Word>(words));
+		Assert.assertEquals(0, sl.selection.size());
+		
+	}
+	
 	
 }

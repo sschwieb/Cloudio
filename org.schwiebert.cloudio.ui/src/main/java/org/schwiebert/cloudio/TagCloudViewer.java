@@ -29,7 +29,6 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
-import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.widgets.Control;
 import org.schwiebert.cloudio.layout.ILayouter;
@@ -78,26 +77,16 @@ public class TagCloudViewer extends ContentViewer {
 			public void mouseDoubleClick(MouseEvent e) {
 			}
 		});
-		cloud.addMouseTrackListener(new MouseTrackListener() {
-			
-			@Override
-			public void mouseHover(MouseEvent e) {
-				
-			}
-			
-			@Override
-			public void mouseExit(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEnter(MouseEvent e) {
-			}
-		});
 		cloud.addMouseWheelListener(new MouseWheelListener() {
 			
 			@Override
 			public void mouseScrolled(MouseEvent e) {
-				cloud.zoomIn();
+				if(e.count > 0) {
+					cloud.zoomIn();
+				} else {
+					cloud.zoomOut();
+				}
+				
 			}
 		});
 	}
@@ -232,27 +221,7 @@ public class TagCloudViewer extends ContentViewer {
 	public void setMaxWords(int words) {
 		this.maxWords = words;
 	}
-
-//	/**
-//	 * Sets the x axis variation in percent (value must be between
-//	 * 0 and 100). The higher the value is, the more place the
-//	 * cloud will consume on the x axis.
-//	 * @param xAxisVariation
-//	 */
-//	public void setXAxisVariation(int xAxisVariation) {
-//		cloud.setXAxisVariation(xAxisVariation);
-//	}
-//
-//	/**
-//	 * Sets the y axis variation in percent (value must be between
-//	 * 0 and 100). The higher the value is, the more place the
-//	 * cloud will consume on the y axis.
-//	 * @param yAxisVariation
-//	 */
-//	public void setYAxisVariation(int yAxisVariation) {
-//		cloud.setYAxisVariation(yAxisVariation);
-//	}
-
+	
 	/**
 	 * Calls {@link TagCloud#zoomFit()} to scale the cloud such
 	 * that it fits the current visible area.

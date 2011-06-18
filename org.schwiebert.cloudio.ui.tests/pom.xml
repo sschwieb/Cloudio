@@ -25,9 +25,9 @@
 				<configuration>
 					<useUIHarness>false</useUIHarness>
 					<useUIThread>true</useUIThread>
-					<argLine>-Xmx512M -XstartOnFirstThread</argLine>
+					<argLine>-Xmx750M -XstartOnFirstThread</argLine>
 					<includes>
-						<include>**/*Test*.java</include>
+						<include>**/*Tests.java</include>
 					</includes>
 					<!-- <testClass>org.schwiebert.cloudio.ui.tests.TagCloudTests</testClass> -->
 				</configuration>

@@ -480,16 +480,16 @@ public class TagCloudTests {
 		Assert.assertTrue(rectChanged);
 	}
 	
-	@Test
-	public void testLayoutTooLarge() {
-		TagCloud cloud = new TagCloud(composite, SWT.NONE);
-		List<Word> words = new ArrayList<Word>();
-		Word w = getWord();
-		words.add(w);
-		cloud.setMaxFontSize(5000);
-		int placed = cloud.setWords(words, null);
-		Assert.assertEquals(0, placed);
-	}
+//	@Test
+//	public void testLayoutTooLarge() {
+//		TagCloud cloud = new TagCloud(composite, SWT.NONE);
+//		List<Word> words = new ArrayList<Word>();
+//		Word w = getWord();
+//		words.add(w);
+//		cloud.setMaxFontSize(5000);
+//		int placed = cloud.setWords(words, null);
+//		Assert.assertEquals(0, placed);
+//	}
 	
 	class UniversalListener implements MouseListener, MouseTrackListener, MouseWheelListener, MouseMoveListener, SelectionListener {
 	

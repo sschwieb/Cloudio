@@ -10,12 +10,9 @@
  ******************************************************************************/
 package org.schwiebert.cloudio;
 
-import java.util.List;
-
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.RGB;
 
 /**
  * Defines the label of an element within the cloud. Besides of the
@@ -66,11 +63,5 @@ public interface ICloudLabelProvider extends IBaseLabelProvider {
 	 * @return
 	 */
 	public float getAngle(Object element);
-
-	public void setColors(List<RGB> colors);
-
-	public void setFonts(List<FontData> fonts);
-
-	public void setAngles(List<Float> list);
 	
 }

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -58,6 +59,7 @@ public class CloudOptionsComposite extends Composite {
 
 	public CloudOptionsComposite(Composite parent, int style, TagCloudViewer viewer) {
 		super(parent, style);
+		Assert.isLegal(viewer.getLabelProvider() instanceof IEditableCloudLabelProvider, "Cloud label provider must be of type " + IEditableCloudLabelProvider.class);
 		this.viewer = viewer;
 		setLayout(new GridLayout());
 		addGroups();
@@ -78,7 +80,7 @@ public class CloudOptionsComposite extends Composite {
 	}
 
 	protected void updateColors() {
-		ICloudLabelProvider lp = (ICloudLabelProvider) viewer.getLabelProvider();
+		IEditableCloudLabelProvider lp = (IEditableCloudLabelProvider) viewer.getLabelProvider();
 		lp.setColors(colors);
 		List<Word> words = viewer.getCloud().getWords();
 		for (Word word : words) {
@@ -88,7 +90,7 @@ public class CloudOptionsComposite extends Composite {
 	}
 	
 	protected void updateFonts() {
-		ICloudLabelProvider lp = (ICloudLabelProvider) viewer.getLabelProvider();
+		IEditableCloudLabelProvider lp = (IEditableCloudLabelProvider) viewer.getLabelProvider();
 		lp.setFonts(fonts);
 	}
 	
@@ -446,7 +448,7 @@ public class CloudOptionsComposite extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				int index = angles.getSelectionIndex();
-				ICloudLabelProvider lp = (ICloudLabelProvider) viewer.getLabelProvider();
+				IEditableCloudLabelProvider lp = (IEditableCloudLabelProvider) viewer.getLabelProvider();
 				lp.setAngles(anglesLists.get(index));
 			}
 			

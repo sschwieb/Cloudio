@@ -26,10 +26,13 @@ import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseWheelListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Control;
 import org.schwiebert.cloudio.layout.ILayouter;
 import org.schwiebert.cloudio.util.Word;
@@ -52,6 +55,8 @@ public class TagCloudViewer extends ContentViewer {
 	private IProgressMonitor monitor;
 
 	public TagCloudViewer(TagCloud cloud) {
+		Assert.isLegal(cloud != null, "TagCloud must not be null!");
+		Assert.isLegal(!cloud.isDisposed(), "TagCloud must not be disposed!");
 		this.cloud = cloud;
 		initListeners();
 	}
@@ -88,6 +93,25 @@ public class TagCloudViewer extends ContentViewer {
 				}
 				
 			}
+		});
+		
+		cloud.addSelectionListener(new SelectionListener() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				List<Object> data = new ArrayList<Object>();
+				Set<Word> selected = (Set<Word>) e.data;
+				for (Word word : selected) {
+					if(word.data != null) {
+						data.add(word.data);
+					}
+				}
+				StructuredSelection selection = new StructuredSelection(data);
+				fireSelectionChanged(new SelectionChangedEvent(TagCloudViewer.this, selection));
+			}
+			
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {}
 		});
 	}
 
@@ -158,7 +182,7 @@ public class TagCloudViewer extends ContentViewer {
 	@Override
 	public void setLabelProvider(IBaseLabelProvider labelProvider) {
 		super.setLabelProvider(labelProvider);
-		Assert.isTrue(labelProvider instanceof ICloudLabelProvider);
+		Assert.isLegal(labelProvider instanceof ICloudLabelProvider);
 	}
 	
 	/**
@@ -167,8 +191,9 @@ public class TagCloudViewer extends ContentViewer {
 	 */
 	@Override
 	public void setContentProvider(IContentProvider contentProvider) {
+		Assert.isLegal(contentProvider instanceof IStructuredContentProvider);
 		super.setContentProvider(contentProvider);
-		Assert.isTrue(contentProvider instanceof IStructuredContentProvider);
+		
 	}
 		
 	/*
@@ -191,9 +216,9 @@ public class TagCloudViewer extends ContentViewer {
 			word.setFontData(labelProvider.getFontData(element));
 			word.angle = labelProvider.getAngle(element);
 			word.data = element;
-			Assert.isNotNull(word.string, "Labelprovider must return a String for each element");
-			Assert.isNotNull(word.getColor(), "Labelprovider must return a Color for each element");
-			Assert.isNotNull(word.getFontData(), "Labelprovider must return a FontData for each element");
+			Assert.isLegal(word.string != null, "Labelprovider must return a String for each element");
+			Assert.isLegal(word.getColor() != null, "Labelprovider must return a Color for each element");
+			Assert.isLegal(word.getFontData() != null, "Labelprovider must return a FontData for each element");
 			Assert.isLegal(word.weight >= 0, "Labelprovider must return a weight between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.weight <= 1, "Labelprovider must return a weight between 0 and 1 (inclusive), but value was " + word.weight);
 			Assert.isLegal(word.angle >= -90, "Angle of an element must be between -90 and +90 (inclusive), but was " + word.angle);
@@ -278,6 +303,10 @@ public class TagCloudViewer extends ContentViewer {
 
 	public void setLayouter(ILayouter layouter) {
 		cloud.setLayouter(layouter);
+	}
+
+	public ILayouter getLayouter() {
+		return cloud.getLayouter();
 	}
 	
 }

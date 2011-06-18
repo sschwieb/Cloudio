@@ -1335,5 +1335,9 @@ found:			for(int a = x; a < xMax; a++) {
 		return wordsToUse;
 	}
 
+	public ILayouter getLayouter() {
+		return layouter;
+	}
+
 	
 }

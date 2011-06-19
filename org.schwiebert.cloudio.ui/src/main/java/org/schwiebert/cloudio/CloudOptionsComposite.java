@@ -43,6 +43,8 @@ import org.eclipse.swt.widgets.Label;
 import org.schwiebert.cloudio.util.Word;
 
 /**
+ * Provides options to modify the rendering of a {@link TagCloudViewer} using an
+ * {@link IEditableCloudLabelProvider}. 
  * 
  * @author sschwieb
  *
@@ -112,7 +114,6 @@ public class CloudOptionsComposite extends Composite {
 		currentScheme = (currentScheme+1)%colorSchemes.size();
 		colors = colorSchemes.get(currentScheme);
 	}
-
 	
 	protected Group addFontButtons(final Composite parent) {
 		Group buttons = new Group(parent, SWT.SHADOW_IN);
@@ -179,6 +180,17 @@ public class CloudOptionsComposite extends Composite {
 		return buttons;
 	}
 	
+	protected Image createImageFromColor(RGB rgb, int size) {
+		Image image;
+		Color color = new Color(Display.getDefault(), rgb);
+		image = new Image(Display.getDefault(), size, size);
+		GC gc = new GC(image);
+		gc.setBackground(color);
+		gc.fillRoundRectangle(0, 0, size, size, 3, 3);
+		color.dispose();
+		gc.dispose();
+		return image;
+	}
 
 	protected Group addColorButtons(final Composite parent) {
 		Group buttons = new Group(parent, SWT.SHADOW_IN);
@@ -204,13 +216,8 @@ public class CloudOptionsComposite extends Composite {
 			public Image getImage(Object element) {
 				Image image = images.get(element);
 				if(image == null) {
-					Color color = new Color(Display.getDefault(), (RGB) element);
-					image = new Image(Display.getDefault(), 24, 24);
-					GC gc = new GC(image);
-					gc.setBackground(color);
-					gc.fillRoundRectangle(0, 0, 24, 24, 3, 3);
-					color.dispose();
-					gc.dispose();
+					RGB rgb = (RGB) element;
+					image = createImageFromColor(rgb, 24);
 					images.put(element, image);
 				}
 				return image;
@@ -284,10 +291,11 @@ public class CloudOptionsComposite extends Composite {
 		gd = new GridData(SWT.FILL, SWT.FILL, true, false);
 		gd.horizontalSpan=2;
 		comp.setLayout(new GridLayout(2, true));
-		comp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		Button bg = new Button(comp, SWT.NONE);
+		comp.setLayoutData(gd);
+		final Button bg = new Button(comp, SWT.FLAT);
 		bg.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		bg.setText("Background Color");
+		bg.setText("Background");
+		bg.setImage(createImageFromColor(viewer.getCloud().getBackground().getRGB(), 16));
 		bg.addSelectionListener(new SelectionListener() {
 			
 			@Override
@@ -300,14 +308,19 @@ public class CloudOptionsComposite extends Composite {
 				viewer.getCloud().setBackground(c);
 				old.dispose();
 				viewer.getCloud().redrawTextLayerImage();
+				Image oldImage = bg.getImage();
+				Image newImage = createImageFromColor(color, 16);
+				bg.setImage(newImage);
+				oldImage.dispose();
 			}
 			
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {}
 		});
-		Button sel = new Button(comp, SWT.NONE);
+		final Button sel = new Button(comp, SWT.FLAT);
 		sel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		sel.setText("Selection Color");
+		sel.setText("Selection");
+		sel.setImage(createImageFromColor(viewer.getCloud().getSelectionColor().getRGB(), 16));
 		sel.addSelectionListener(new SelectionListener() {
 			
 			@Override
@@ -320,6 +333,10 @@ public class CloudOptionsComposite extends Composite {
 				viewer.getCloud().setSelectionColor(c);
 				old.dispose();
 				viewer.getCloud().redrawTextLayerImage();
+				Image oldImage = sel.getImage();
+				Image newImage = createImageFromColor(color, 16);
+				sel.setImage(newImage);
+				oldImage.dispose();
 			}
 			
 			@Override
@@ -327,10 +344,7 @@ public class CloudOptionsComposite extends Composite {
 		});
 		return buttons;
 	}
-	
 
-
-	
 	protected Group addLayoutButtons(Composite parent) {
 		Group buttons = new Group(parent, SWT.SHADOW_IN);
 		buttons.setLayout(new GridLayout(2, true));
@@ -426,6 +440,10 @@ public class CloudOptionsComposite extends Composite {
 			public void widgetDefaultSelected(SelectionEvent e) {}
 		});
 		
+		if(viewer.getLabelProvider() instanceof IEditableCloudLabelProvider) {
+			
+		}
+		
 		l = new Label(buttons, SWT.NONE);
 		l.setText("Angles");
 		final Combo angles = new Combo(buttons, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -457,8 +475,6 @@ public class CloudOptionsComposite extends Composite {
 		});
 		return buttons;
 	}
-	
-
 
 	public List<RGB> getColors() {
 		return colors;

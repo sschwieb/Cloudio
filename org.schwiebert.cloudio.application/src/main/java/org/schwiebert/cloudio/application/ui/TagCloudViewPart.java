@@ -216,7 +216,7 @@ public class TagCloudViewPart extends ViewPart {
 
 	@Override
 	public void setFocus() {
-		viewer.setFocus();
+		viewer.getCloud().setFocus();
 	}
 
 	@Override

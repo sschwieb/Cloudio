@@ -40,7 +40,7 @@ import org.schwiebert.cloudio.util.Word;
 
 
 /**
- * 
+ * A model-based adapter for a {@link TagCloud}.
  * @author sschwieb
  */
 public class TagCloudViewer extends ContentViewer {
@@ -55,14 +55,76 @@ public class TagCloudViewer extends ContentViewer {
 
 	private IProgressMonitor monitor;
 
+	/**
+	 * Create a new TagCloudViewer for the given {@link TagCloud},
+	 * which must not be <code>null</code>.
+	 * @param cloud
+	 */
 	public TagCloudViewer(TagCloud cloud) {
 		Assert.isLegal(cloud != null, "TagCloud must not be null!");
 		Assert.isLegal(!cloud.isDisposed(), "TagCloud must not be disposed!");
 		this.cloud = cloud;
 		initListeners();
 	}
-	
+	/**
+	 * Initialize the default tag cloud listeners.
+	 * Can be overridden to modify the behaviour of the viewer.
+	 */
 	protected void initListeners() {
+		initSelectionListener();
+		initMouseWheelListener();
+		initToolTipSupport();
+	}
+	
+	/**
+	 * Initialize tool tip support when the cursor
+	 * hovers a word.
+	 */
+	protected void initToolTipSupport() {
+		cloud.addMouseTrackListener(new MouseTrackListener() {
+			
+			@Override
+			public void mouseHover(MouseEvent e) {}
+			
+			@Override
+			public void mouseExit(MouseEvent e) {
+				cloud.setToolTipText(null);
+			}
+			
+			@Override
+			public void mouseEnter(MouseEvent e) {
+				Word word = (Word) e.data;
+				ICloudLabelProvider labelProvider = (ICloudLabelProvider) getLabelProvider();
+				cloud.setToolTipText(labelProvider.getToolTip(word.data));
+			}
+		});
+	}
+	
+	/**
+	 * Initialize the mouse wheel listener to support
+	 * zooming in and out.
+	 */
+	protected void initMouseWheelListener() {
+		cloud.addMouseWheelListener(new MouseWheelListener() {
+			
+			@Override
+			public void mouseScrolled(MouseEvent e) {
+				if(e.count > 0) {
+					cloud.zoomIn();
+				} else {
+					cloud.zoomOut();
+				}
+				
+			}
+		});
+	}
+	
+	/**
+	 * Initialize default selection behaviour: Words can
+	 * be selected by mouse click, and selection listeners
+	 * are notified when the selection changed.
+	 */
+	protected void initSelectionListener() {
 		cloud.addMouseListener(new MouseListener() {
 			
 			@Override
@@ -83,37 +145,6 @@ public class TagCloudViewer extends ContentViewer {
 			public void mouseDoubleClick(MouseEvent e) {
 			}
 		});
-		cloud.addMouseWheelListener(new MouseWheelListener() {
-			
-			@Override
-			public void mouseScrolled(MouseEvent e) {
-				if(e.count > 0) {
-					cloud.zoomIn();
-				} else {
-					cloud.zoomOut();
-				}
-				
-			}
-		});
-		
-		cloud.addMouseTrackListener(new MouseTrackListener() {
-			
-			@Override
-			public void mouseHover(MouseEvent e) {}
-			
-			@Override
-			public void mouseExit(MouseEvent e) {
-				cloud.setToolTipText(null);
-			}
-			
-			@Override
-			public void mouseEnter(MouseEvent e) {
-				Word word = (Word) e.data;
-				ICloudLabelProvider labelProvider = (ICloudLabelProvider) getLabelProvider();
-				cloud.setToolTipText(labelProvider.getToolTip(word.data));
-			}
-		});
-		
 		cloud.addSelectionListener(new SelectionListener() {
 			
 			@Override
@@ -134,11 +165,20 @@ public class TagCloudViewer extends ContentViewer {
 		});
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.Viewer#getControl()
+	 */
 	@Override
 	public Control getControl() {
 		return getCloud();
 	}
 
+	/**
+	 * Returns the currently selected elements, as an
+	 * {@link IStructuredSelection}. Returns an empty
+	 * selection if no elements are selected.
+	 */
 	@Override
 	public ISelection getSelection() {
 		List<Object> elements = new ArrayList<Object>();
@@ -154,6 +194,10 @@ public class TagCloudViewer extends ContentViewer {
 		
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.Viewer#setSelection(org.eclipse.jface.viewers.ISelection, boolean)
+	 */
 	@Override
 	public void setSelection(ISelection selection, boolean reveal) {
 		this.selection.clear();
@@ -167,10 +211,6 @@ public class TagCloudViewer extends ContentViewer {
 			}
 		}
 		cloud.setSelection(this.selection);
-	}
-
-	public void setFocus() {
-		cloud.setFocus();
 	}
 
 	/**
@@ -310,6 +350,13 @@ public class TagCloudViewer extends ContentViewer {
 		return maxWords;
 	}
 
+	/**
+	 * Same as {@link TagCloudViewer#setInput(Object)}, but with
+	 * an {@link IProgressMonitor} to provide feedback during the
+	 * layout phase.
+	 * @param input
+	 * @param progressMonitor
+	 */
 	public void setInput(Object input, IProgressMonitor progressMonitor) {
 		this.monitor = progressMonitor;
 		super.setInput(input);

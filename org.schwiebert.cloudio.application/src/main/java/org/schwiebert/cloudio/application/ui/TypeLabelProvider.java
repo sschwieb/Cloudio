@@ -22,7 +22,6 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
-import org.schwiebert.cloudio.ICloudLabelProvider;
 import org.schwiebert.cloudio.IEditableCloudLabelProvider;
 import org.schwiebert.cloudio.application.data.Type;
 

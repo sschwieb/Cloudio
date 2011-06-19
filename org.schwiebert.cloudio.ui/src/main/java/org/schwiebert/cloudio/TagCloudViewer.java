@@ -30,6 +30,7 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -92,6 +93,24 @@ public class TagCloudViewer extends ContentViewer {
 					cloud.zoomOut();
 				}
 				
+			}
+		});
+		
+		cloud.addMouseTrackListener(new MouseTrackListener() {
+			
+			@Override
+			public void mouseHover(MouseEvent e) {}
+			
+			@Override
+			public void mouseExit(MouseEvent e) {
+				cloud.setToolTipText(null);
+			}
+			
+			@Override
+			public void mouseEnter(MouseEvent e) {
+				Word word = (Word) e.data;
+				ICloudLabelProvider labelProvider = (ICloudLabelProvider) getLabelProvider();
+				cloud.setToolTipText(labelProvider.getToolTip(word.data));
 			}
 		});
 		

@@ -63,5 +63,12 @@ public interface ICloudLabelProvider extends IBaseLabelProvider {
 	 * @return
 	 */
 	public float getAngle(Object element);
+
+	/**
+	 * Return the tool tip of the element, or <code>null</code>, if none.
+	 * @param data
+	 * @return
+	 */
+	public String getToolTip(Object element);
 	
 }

@@ -62,8 +62,7 @@ public class TagCloudViewPart extends ViewPart {
 		TagCloud cloud = new TagCloud(cloudComp, SWT.HORIZONTAL | SWT.VERTICAL);
 		cloud.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		viewer = new TagCloudViewer(cloud);
-		createSideTab(sash);
-		sash.setWeights(new int[] {72,28});
+
 		layouter = new DefaultLayouter(20, 10);
 		//layouter = new CharacterLayouter(20,10);
 		viewer.setLayouter(layouter);
@@ -91,6 +90,8 @@ public class TagCloudViewPart extends ViewPart {
 				return ((List<?>)inputElement).toArray();
 			}
 		});
+		createSideTab(sash);
+		
 		cloud.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		viewer.getCloud().addControlListener(new ControlListener() {
 			
@@ -116,6 +117,7 @@ public class TagCloudViewPart extends ViewPart {
 		viewer.getCloud().setMinFontSize(15);
 		labelProvider.setColors(options.getColors());
 		labelProvider.setFonts(options.getFonts());
+		sash.setWeights(new int[] {72,28});
 		viewer.setInput(types);
 	}
 

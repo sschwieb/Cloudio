@@ -23,6 +23,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 import org.schwiebert.cloudio.ICloudLabelProvider;
+import org.schwiebert.cloudio.IEditableCloudLabelProvider;
 import org.schwiebert.cloudio.application.data.Type;
 
 /**
@@ -31,7 +32,7 @@ import org.schwiebert.cloudio.application.data.Type;
  *
  */
 public class TypeLabelProvider extends BaseLabelProvider implements
-		ICloudLabelProvider {
+		IEditableCloudLabelProvider {
 
 	private double maxOccurrences;
 	private double minOccurrences;
@@ -120,7 +121,6 @@ public class TypeLabelProvider extends BaseLabelProvider implements
 			Color c = new Color(Display.getDefault(), color);
 			colorList.add(c);
 		}
-		
 	}
 
 	public void setFonts(List<FontData> newFonts) {
@@ -135,5 +135,12 @@ public class TypeLabelProvider extends BaseLabelProvider implements
 			fontList.add(f);
 		}
 	}
+
+	@Override
+	public String getToolTip(Object element) {
+		return getLabel(element);
+	}
+	
+	
 
 }

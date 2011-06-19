@@ -38,5 +38,10 @@ public class TestLabelProvider extends BaseLabelProvider implements ICloudLabelP
 	public float getAngle(Object element) {
 		return ANGLE;
 	}
+
+	@Override
+	public String getToolTip(Object element) {
+		return getLabel(element);
+	}
 	
 }

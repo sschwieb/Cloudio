@@ -1,13 +1,11 @@
 /*******************************************************************************
- * Copyright (c) 2011 Department of Computational Linguistics, University of Cologne, Germany.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Department of Computational Linguistics, University of Cologne, Germany - initial API and implementation
- ******************************************************************************/
+* Copyright (c) 2011 Stephan Schwiebert. All rights reserved. This program and
+* the accompanying materials are made available under the terms of the Eclipse
+* Public License v1.0 which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+* <p/>
+* Contributors: Stephan Schwiebert - initial API and implementation
+*******************************************************************************/
 package org.schwiebert.cloudio.application.data;
 
 import java.io.BufferedInputStream;
@@ -16,7 +14,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,8 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.schwiebert.cloudio.application.ui.CloudioApplicationPlugin;
 
 /**
  * 
@@ -50,19 +45,15 @@ public class TypeCollector {
 			text.append(s + "\n");
 		}
 		br.close();
-		if(stopWords == null) {
-			URL resource = CloudioApplicationPlugin.getDefault().getBundle().getResource("stopwords_de.lst");
-			bis = new BufferedInputStream(resource.openStream());
-			br = new BufferedReader(new InputStreamReader(bis, encoding));			
-		} else {
-			bis = new BufferedInputStream(new FileInputStream(stopWords));
-			br = new BufferedReader(new InputStreamReader(bis, encoding));			
-		}
 		Set<String> stops = new HashSet<String>();
-		while((s = br.readLine()) != null) {
-			stops.add(s.toLowerCase().trim());
+		if(stopWords != null) {
+			bis = new BufferedInputStream(new FileInputStream(stopWords));
+			br = new BufferedReader(new InputStreamReader(bis, encoding));
+			while((s = br.readLine()) != null) {
+				stops.add(s.toLowerCase().trim());
+			}
+			br.close();
 		}
-		br.close();
 		BreakIterator iterator = BreakIterator.getWordInstance(Locale.getDefault());
 		String txt = text.toString();
 		iterator.setText(txt);

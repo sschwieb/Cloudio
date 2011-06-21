@@ -1,13 +1,11 @@
 /*******************************************************************************
- * Copyright (c) 2011 Department of Computational Linguistics, University of Cologne, Germany.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Department of Computational Linguistics, University of Cologne, Germany - initial API and implementation
- ******************************************************************************/
+* Copyright (c) 2011 Stephan Schwiebert. All rights reserved. This program and
+* the accompanying materials are made available under the terms of the Eclipse
+* Public License v1.0 which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+* <p/>
+* Contributors: Stephan Schwiebert - initial API and implementation
+*******************************************************************************/
 package org.schwiebert.cloudio.layout;
 
 import java.util.Random;
@@ -21,7 +19,6 @@ import org.schwiebert.cloudio.util.Word;
 /**
  * 
  * @author sschwieb
- * @author geduldig
  *
  */
 public class DefaultLayouter implements ILayouter {
@@ -93,7 +90,6 @@ public class DefaultLayouter implements ILayouter {
 		Point next = new Point(-word.width/2, -word.height/2);
 		next.x += random.nextInt(25);
 		next.y += random.nextInt(25);
-		//Point offset = randomOffsets(word, cloudArea);
 		double growFactor = 1.6;
 		offset.x += cloudArea.width/2;
 		offset.y += cloudArea.height/2;

@@ -37,7 +37,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.schwiebert.cloudio.TagCloud;
-import org.schwiebert.cloudio.util.Word;
+import org.schwiebert.cloudio.Word;
 
 public class TagCloudTests {
 	

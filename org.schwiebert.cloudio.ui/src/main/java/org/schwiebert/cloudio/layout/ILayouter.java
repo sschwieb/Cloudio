@@ -10,7 +10,7 @@ package org.schwiebert.cloudio.layout;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.schwiebert.cloudio.util.Word;
+import org.schwiebert.cloudio.Word;
 
 /**
  * 

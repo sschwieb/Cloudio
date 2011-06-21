@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.schwiebert.cloudio.TagCloud;
+import org.schwiebert.cloudio.Word;
 import org.schwiebert.cloudio.layout.DefaultLayouter;
-import org.schwiebert.cloudio.util.Word;
 
 /**
  * 

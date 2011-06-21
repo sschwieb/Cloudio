@@ -6,12 +6,13 @@
 * <p/>
 * Contributors: Stephan Schwiebert - initial API and implementation
 *******************************************************************************/
-package org.schwiebert.cloudio.util;
+package org.schwiebert.cloudio;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
+import org.schwiebert.cloudio.util.RectTree;
 
 /**
  * Helper class which stores all data

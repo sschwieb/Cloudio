@@ -54,7 +54,6 @@ import org.schwiebert.cloudio.layout.DefaultLayouter;
 import org.schwiebert.cloudio.layout.ILayouter;
 import org.schwiebert.cloudio.util.RectTree;
 import org.schwiebert.cloudio.util.SmallRect;
-import org.schwiebert.cloudio.util.Word;
 
 /**
  * 

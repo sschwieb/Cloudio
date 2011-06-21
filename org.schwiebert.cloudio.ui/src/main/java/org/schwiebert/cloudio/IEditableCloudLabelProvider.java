@@ -13,6 +13,13 @@ import java.util.List;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 
+/**
+ * An {@link IEditableCloudLabelProvider} is supported by the {@link CloudOptionsComposite},
+ * such that it can be used to modify colors, fonts, and angles.
+ * 
+ * @author sschwieb
+ *
+ */
 public interface IEditableCloudLabelProvider extends ICloudLabelProvider {
 
 	public void setColors(List<RGB> colors);

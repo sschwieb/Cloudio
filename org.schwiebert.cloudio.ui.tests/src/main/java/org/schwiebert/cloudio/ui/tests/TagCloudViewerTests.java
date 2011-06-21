@@ -7,6 +7,7 @@ import junit.framework.Assert;
 
 import org.eclipse.jface.viewers.BaseLabelProvider;
 import org.eclipse.jface.viewers.IContentProvider;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
@@ -16,11 +17,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.schwiebert.cloudio.ListContentProvider;
 import org.schwiebert.cloudio.TagCloud;
 import org.schwiebert.cloudio.TagCloudViewer;
+import org.schwiebert.cloudio.Word;
 import org.schwiebert.cloudio.layout.DefaultLayouter;
-import org.schwiebert.cloudio.util.Word;
 
 public class TagCloudViewerTests {
 
@@ -105,6 +105,36 @@ public class TagCloudViewerTests {
 			@Override
 			public void dispose() {}
 		});
+	}
+	
+private static class ListContentProvider implements ITreeContentProvider {
+		
+		@Override
+		public void dispose() {}
+
+		@Override
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {}
+
+		@Override
+		public Object[] getElements(Object inputElement) {
+			return ((List<?>)inputElement).toArray();
+		}
+
+		@Override
+		public Object[] getChildren(Object parentElement) {
+			return null;
+		}
+
+		@Override
+		public Object getParent(Object element) {
+			return null;
+		}
+
+		@Override
+		public boolean hasChildren(Object element) {
+			return false;
+		}
+
 	}
 	
 	@Test

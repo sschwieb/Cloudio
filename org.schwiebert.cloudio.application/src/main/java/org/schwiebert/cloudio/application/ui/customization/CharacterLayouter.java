@@ -10,8 +10,8 @@ package org.schwiebert.cloudio.application.ui.customization;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.schwiebert.cloudio.Word;
 import org.schwiebert.cloudio.layout.DefaultLayouter;
-import org.schwiebert.cloudio.util.Word;
 
 /**
  * An example to show how to modify a layouter

@@ -18,7 +18,9 @@ import java.util.Map;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -38,7 +40,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FontDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
-import org.schwiebert.cloudio.util.Word;
 
 /**
  * Provides options to modify the rendering of a {@link TagCloudViewer} using an
@@ -48,14 +49,45 @@ import org.schwiebert.cloudio.util.Word;
  *
  */
 public class CloudOptionsComposite extends Composite {
-
+	
 	protected TagCloudViewer viewer;
 	
 	protected List<RGB> colors = new ArrayList<RGB>();
 	protected List<FontData> fonts = new ArrayList<FontData>();
 	
 	protected List<List<RGB>> colorSchemes = new ArrayList<List<RGB>>();
+	
 	protected int currentScheme;
+	
+	private static class ListContentProvider implements ITreeContentProvider {
+		
+		@Override
+		public void dispose() {}
+
+		@Override
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {}
+
+		@Override
+		public Object[] getElements(Object inputElement) {
+			return ((List<?>)inputElement).toArray();
+		}
+
+		@Override
+		public Object[] getChildren(Object parentElement) {
+			return null;
+		}
+
+		@Override
+		public Object getParent(Object element) {
+			return null;
+		}
+
+		@Override
+		public boolean hasChildren(Object element) {
+			return false;
+		}
+
+	}
 
 	public CloudOptionsComposite(Composite parent, int style, TagCloudViewer viewer) {
 		super(parent, style);

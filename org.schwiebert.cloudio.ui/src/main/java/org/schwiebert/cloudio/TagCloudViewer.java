@@ -34,7 +34,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Control;
 import org.schwiebert.cloudio.layout.ILayouter;
-import org.schwiebert.cloudio.util.Word;
 
 
 /**

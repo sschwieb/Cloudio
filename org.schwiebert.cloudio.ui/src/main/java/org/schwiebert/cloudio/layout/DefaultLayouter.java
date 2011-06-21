@@ -13,8 +13,8 @@ import java.util.Random;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.schwiebert.cloudio.Word;
 import org.schwiebert.cloudio.util.RectTree;
-import org.schwiebert.cloudio.util.Word;
 
 /**
  * 

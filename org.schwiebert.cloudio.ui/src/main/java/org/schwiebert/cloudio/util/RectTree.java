@@ -215,10 +215,6 @@ public class RectTree {
 		}
 	}
 
-	public short getWordId(Point position) {
-		return root.getWordId(position);
-	}
-
 	public void releaseRects() {
 		getLeaves();
 		root.children = null;

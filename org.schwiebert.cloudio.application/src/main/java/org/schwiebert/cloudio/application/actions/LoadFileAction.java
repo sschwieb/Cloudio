@@ -45,7 +45,6 @@ public class LoadFileAction extends AbstractTagCloudAction {
 			long start = System.currentTimeMillis();
 			viewer.getCloud().layoutCloud(pd.getProgressMonitor(), false);
 			long end = System.currentTimeMillis();
-			System.out.println("Layouted: " + (end - start));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {

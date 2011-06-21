@@ -574,7 +574,7 @@ found:			for(int a = x; a < xMax; a++) {
 				boolean result = layouter.layout(point, word, cloudArea, cloudMatrix);
 				lTime += System.currentTimeMillis() - s;
 				if(!result) {
-					System.out.println("Failed to place " + word.string);
+					System.err.println("Failed to place " + word.string);
 					continue;
 				}
 				success++;

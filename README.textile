@@ -1,4 +1,8 @@
-Git repository for Cloudio, an Eclipse/SWT-based Tag Cloud inspired by "Wordle":http://www.wordle.net/ .
+*Please note: Cloudio has been contributed to Eclipse and is not part of the GEF/Zest framework.*
+Cloudio is still mirrored on GitHub - have a look at https://github.com/eclipse/zest. For additional
+information, please visit the "Zest homepage" and the "Eclipse wiki":http://wiki.eclipse.org/Zest/Cloudio
+
+This is the *old* Git repository for Cloudio, an Eclipse/SWT-based Tag Cloud inspired by "Wordle":http://www.wordle.net/ .
 
 Cloudio was originally developed as a visualization plugin for "Tesla, the Text Engineering Software Laboratory":http://tesla.spinfo.uni-koeln.de , 
 developed at the "Department of Computational Linguistics":http://www.spinfo.phil-fak.uni-koeln.de , University of Cologne.
